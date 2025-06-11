@@ -1,0 +1,8 @@
+useDynLib(evgmrf, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+exportPattern("^[[:alpha:]]+")
+import("grDevices", "stats", "graphics", "utils")
+importFrom("methods", "as")
+S3method(plot, evgmrf)
+S3method(predict, evgmrf)
+S3method(simulate, evgmrf)

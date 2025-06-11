@@ -1,0 +1,16 @@
+Package: evgmrf
+Type: Package
+Title: GMRF models for extremes
+Version: 0.0.1
+Date: 2025-06-11
+Authors@R: 
+      person("Ben", "Youngman", , "b.youngman@exeter.ac.uk", role = c("aut", "cre"),
+             comment = c(ORCID = "0000-0003-0215-8189"))
+Maintainer: Ben Youngman <b.youngman@exeter.ac.uk>
+Description: Fitting extreme value distributions with 
+  parameters that vary according to Gaussian Markov random fields.
+License: GPL-3
+Imports: Rcpp (>= 1.0.10), Matrix (>= 1.6-0), methods, lattice, gridExtra
+LinkingTo: Rcpp, RcppArmadillo, RcppEigen
+Depends: R (>= 3.5.0)
+RoxygenNote: 7.3.2
