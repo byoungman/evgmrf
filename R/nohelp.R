@@ -297,7 +297,7 @@
         stp <- D %*% Matrix::solve(cholH, b)
         ldet <- as.vector(Matrix::determinant(cholH, sqrt = FALSE)$modulus)
       } else {
-      H <- .perturb(H, b, likdata$opts.perturb$tol, likdata$opts.perturb$mult)
+      H <- .perturb(H, b, likdata$control$perturb.tol, likdata$control$perturb.mult)
       cholH <- attr(H, 'chol')
       stp <- D %*% cholH$z
       ldet <- cholH$logdet_A
