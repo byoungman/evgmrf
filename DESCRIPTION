@@ -2,7 +2,7 @@ Package: evgmrf
 Type: Package
 Title: GMRF models for extremes
 Version: 0.0.1
-Date: 2025-06-11
+Date: 2025-07-18
 Authors@R: 
       person("Ben", "Youngman", , "b.youngman@exeter.ac.uk", role = c("aut", "cre"),
              comment = c(ORCID = "0000-0003-0215-8189"))

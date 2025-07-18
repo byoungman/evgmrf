@@ -6,7 +6,7 @@
 const double xieps = 0.0001;
 
 // [[Rcpp::export(.rlargegmrfld0)]]
-double rlargegmrfld0(arma::mat pars, arma::field<arma::mat> yc)
+double rlargegmrfld0(arma::mat pars, arma::field<arma::mat> yc, arma::field<arma::mat> wc)
 {
   
 int n = yc.n_rows; // number of locations
@@ -16,8 +16,8 @@ double nllh = 0.0;
 
 double mu, lpsi, txi, xi;
 double ee2;
-arma::mat yv;
-arma::rowvec y, ee1;
+arma::mat yv, wv;
+arma::rowvec y, w, ee1;
 
 for (int j=0; j < n; j++) {
       
@@ -29,10 +29,12 @@ for (int j=0; j < n; j++) {
   m = yc(j).n_rows; // number of obs
   r = yc(j).n_cols; // number of order statistics
   yv = yc(j);
+  wv = wc(j);
   
   for (int k=0; k < m; k++) {
     
     y = yv.row(k);
+    w = wv.row(k);
     
     if (arma::is_finite(y)) {
       
@@ -49,13 +51,13 @@ for (int j=0; j < n; j++) {
         
       } else {
         
-        nllh += lpsi + (ee2 + 1.0) * log1p(ee1(l));
+        nllh += w(l) * (lpsi + (ee2 + 1.0) * log1p(ee1(l)));
         
       }
 
     }
     
-    nllh += R_pow(1 + ee1[r - 1], -ee2);
+    nllh += w[r - 1] * R_pow(1 + ee1[r - 1], -ee2);
     
     }
 
@@ -173,7 +175,7 @@ return(nllh);
 // }
 
 // [[Rcpp::export(.rlargegmrfld12)]]
-arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc)
+arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc, arma::field<arma::mat> wc)
 {
   
   int n = yc.n_rows; // number of locations
@@ -181,8 +183,8 @@ arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc)
   
   double mu, lpsi, txi, xi;
   
-  arma::mat yv;
-  arma::rowvec y, ee1;
+  arma::mat yv, wv;
+  arma::rowvec y, w, ee1;
   
   double ee2, ee3, ee5, ee6, ee7, ee8, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18, ee19;
@@ -200,10 +202,12 @@ arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc)
     m = yc(j).n_rows; // number of obs
     r = yc(j).n_cols; // number of order statistics
     yv = yc(j);
+    wv = wc(j);
     
     for (int k=0; k < m; k++) {
       
       y = yv.row(k);
+      w = wv.row(k);
       
       if(arma::is_finite(y)) {
       
@@ -227,19 +231,19 @@ arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc)
         ee19 = ee12 * ee5;
         ee20 = log1p(ee9);
         
-        out(j, 0) += -(ee19/ee11);
-        out(j, 1) += 1 - ee19 * ee7/ee11;
-        out(j, 2) += (1.5 * (ee12 * ee7/ee11) - 1.5 * (ee20/ee15)) *
-          ee2/ee13;
-        out(j, 3) += -(ee12 * ee15/(R_pow(ee10, 2) * R_pow(ee6, 2)));
-        out(j, 4) += (1 - ee14) * ee12 * ee5/ee11;
-        out(j, 5) += -(ee18/ee17);
-        out(j, 6) += -((ee14 - 1) * ee12 * ee5 * ee7/ee11);
-        out(j, 7) += -(ee18 * ee7/ee17);
-        out(j, 8) += -(((((2.25 * (ee7/(ee10 * ee3 * ee6)) - 3) * ee2/
+        out(j, 0) += w(l) * (-(ee19/ee11));
+        out(j, 1) += w(l) * (1 - ee19 * ee7/ee11);
+        out(j, 2) += w(l) * ((1.5 * (ee12 * ee7/ee11) - 1.5 * (ee20/ee15)) *
+          ee2/ee13);
+        out(j, 3) += w(l) * (-(ee12 * ee15/(R_pow(ee10, 2) * R_pow(ee6, 2))));
+        out(j, 4) += w(l) * ((1 - ee14) * ee12 * ee5/ee11);
+        out(j, 5) += w(l) * (-(ee18/ee17));
+        out(j, 6) += w(l) * (-((ee14 - 1) * ee12 * ee5 * ee7/ee11));
+        out(j, 7) += w(l) * (-(ee18 * ee7/ee17));
+        out(j, 8) += w(l) * (-(((((2.25 * (ee7/(ee10 * ee3 * ee6)) - 3) * ee2/
           ee3 + 1.5) * ee12 + 2.25 * (ee2/(ee13 * ee15))) * ee7/ee11 +
             (2.25 * (ee2 * ee7/ee17) - ((4.5/(ee3 * ee5) - 3) * ee2/ee3 +
-            1.5) * ee20)/ee15) * ee2/ee13);
+            1.5) * ee20)/ee15) * ee2/ee13));
     
       }
         
@@ -269,18 +273,18 @@ arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc)
           ee32 = (1.5 * (ee15/(ee20 * ee5)) - 1.5 * ee26) * ee2;
           ee33 = 1/ee13;
           
-          out(j, 0) += 1/ee18;
-          out(j, 1) += ee26;
-          out(j, 2) += ee32/ee24;
-          out(j, 3) += ee21/(ee16 * R_pow(ee6, 2));
-          out(j, 4) += (ee29 - ee33)/ee6;
-          out(j, 5) += ee25/ee31;
-          out(j, 6) += -((ee33 - ee29) * ee7/ee6);
-          out(j, 7) += ee25 * ee7/ee31;
-          out(j, 8) += ((((2.25/ee30 - 3) * ee2/ee3 + 1.5)/ee13 - 1.5 *
+          out(j, 0) += w[r - 1] * (1/ee18);
+          out(j, 1) += w[r - 1] * (ee26);
+          out(j, 2) += w[r - 1] * (ee32/ee24);
+          out(j, 3) += w[r - 1] * (ee21/(ee16 * R_pow(ee6, 2)));
+          out(j, 4) += w[r - 1] * ((ee29 - ee33)/ee6);
+          out(j, 5) += w[r - 1] * (ee25/ee31);
+          out(j, 6) += w[r - 1] * (-((ee33 - ee29) * ee7/ee6));
+          out(j, 7) += w[r - 1] * (ee25 * ee7/ee31);
+          out(j, 8) += w[r - 1] * (((((2.25/ee30 - 3) * ee2/ee3 + 1.5)/ee13 - 1.5 *
             (ee25/ee14)) * ee7/ee6 + ((2.25 * (ee2 * ee7/(ee11 * ee14 *
             ee6)) - ((4.5/ee30 - 3) * ee2/ee3 + 1.5) * ee15)/ee20 + 1.5 *
-            (ee32 * ee15/ee24))/ee5) * ee2/ee24;
+            (ee32 * ee15/ee24))/ee5) * ee2/ee24);
           
       }
       

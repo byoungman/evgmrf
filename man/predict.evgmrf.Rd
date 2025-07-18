@@ -11,6 +11,8 @@
   prob = NULL,
   index = object$index,
   simplify2array = FALSE,
+  xid = 1:object$nx,
+  yid = 1:object$ny,
   loop = TRUE,
   progress = loop,
   chunksize = 100,
@@ -31,6 +33,10 @@
 \item{index}{to do}
 
 \item{simplify2array}{to do}
+
+\item{xid}{to do}
+
+\item{yid}{to do}
 
 \item{loop}{to do}
 

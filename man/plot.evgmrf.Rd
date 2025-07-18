@@ -12,6 +12,8 @@
   nlev = NULL,
   edge.drop,
   index = x$index,
+  xid = 1:x$nx,
+  yid = 1:x$ny,
   nrc = NULL,
   ...
 )
@@ -30,6 +32,10 @@
 \item{edge.drop}{to do}
 
 \item{index}{to do}
+
+\item{xid}{to do}
+
+\item{yid}{to do}
 
 \item{nrc}{to do}
 

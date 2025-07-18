@@ -29,20 +29,24 @@
     .Call(`_evgmrf_eig1`, A)
 }
 
-.tgevgmrfld0 <- function(pars, yc) {
-    .Call(`_evgmrf_tgevgmrfld0`, pars, yc)
+.tgevgmrfld0 <- function(pars, yc, wc) {
+    .Call(`_evgmrf_tgevgmrfld0`, pars, yc, wc)
 }
 
-.tgevgmrfld12 <- function(pars, yc) {
-    .Call(`_evgmrf_tgevgmrfld12`, pars, yc)
+.tgevgmrfld12 <- function(pars, yc, wc) {
+    .Call(`_evgmrf_tgevgmrfld12`, pars, yc, wc)
 }
 
-.tgevgmrfld0_omp <- function(pars, yc, threads = 0L) {
-    .Call(`_evgmrf_tgevgmrfld0_omp`, pars, yc, threads)
+.tgevgmrfldJ <- function(pars, yc, wc) {
+    .Call(`_evgmrf_tgevgmrfldJ`, pars, yc, wc)
 }
 
-.tgevgmrfld12_omp <- function(pars, yc, threads = 0L) {
-    .Call(`_evgmrf_tgevgmrfld12_omp`, pars, yc, threads)
+.tgevgmrfld0_omp <- function(pars, yc, wc, threads = 0L) {
+    .Call(`_evgmrf_tgevgmrfld0_omp`, pars, yc, wc, threads)
+}
+
+.tgevgmrfld12_omp <- function(pars, yc, wc, threads = 0L) {
+    .Call(`_evgmrf_tgevgmrfld12_omp`, pars, yc, wc, threads)
 }
 
 .tgev0 <- function(pars, yv, delta) {
@@ -137,12 +141,12 @@
     .Call(`_evgmrf_tpprocgmrfld12`, pars, yc, mult)
 }
 
-.rlargegmrfld0 <- function(pars, yc) {
-    .Call(`_evgmrf_rlargegmrfld0`, pars, yc)
+.rlargegmrfld0 <- function(pars, yc, wc) {
+    .Call(`_evgmrf_rlargegmrfld0`, pars, yc, wc)
 }
 
-.rlargegmrfld12 <- function(pars, yc) {
-    .Call(`_evgmrf_rlargegmrfld12`, pars, yc)
+.rlargegmrfld12 <- function(pars, yc, wc) {
+    .Call(`_evgmrf_rlargegmrfld12`, pars, yc, wc)
 }
 
 .rlarged0 <- function(pars, yv) {
@@ -171,5 +175,9 @@
 
 .ldchol <- function(A) {
     .Call(`_evgmrf_chol_logdet`, A)
+}
+
+.cholsolveAB <- function(A, B) {
+    .Call(`_evgmrf_chol_solve_mat`, A, B)
 }
 

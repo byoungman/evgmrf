@@ -866,3 +866,24 @@ double chol_logdet(const Eigen::SparseMatrix<double>& A) {
 //     Rcpp::Named("z") = z
 //   );
 // }
+
+// Compute Cholesky decomposition and solve Az = B
+// [[Rcpp::export(.cholsolveAB)]]
+Eigen::MatrixXd chol_solve_mat(const Eigen::SparseMatrix<double>& A, const Eigen::MatrixXd& B) {
+
+    // Compute Cholesky decomposition using Eigen's SimplicialLLT
+  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> chol(A);
+  
+  if (chol.info() != Eigen::Success) {
+    Rcpp::stop("Cholesky decomposition failed. Ensure A is positive definite.");
+  }
+  
+  // Extract diagonal elements of L manually
+  Eigen::SparseMatrix<double> L = chol.matrixL();
+
+  // Solve Az = B using the computed Cholesky decomposition
+  Eigen::MatrixXd Z = chol.solve(B);
+  
+  // Return both logdet_A and solution z
+  return Z;
+}

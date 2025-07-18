@@ -9,6 +9,8 @@
 #' @param nlev to do
 #' @param edge.drop to do
 #' @param index to do
+#' @param xid to do
+#' @param yid to do
 #' @param nrc to do
 #' @param ... arguments passed to \code{lattice::levelplot}
 #' 
@@ -32,8 +34,9 @@
 #' @export
 #' 
 plot.evgmrf <- function(x, type = 'link', prob = NULL, 
-                        lims = NULL, nlev = NULL, edge.drop, index = x$index, nrc = NULL, ...) {
-  out <- predict.evgmrf(x, type, index, prob)
+                        lims = NULL, nlev = NULL, edge.drop, index = x$index, 
+                        xid = 1:x$nx, yid = 1:x$ny, nrc = NULL, ...) {
+  out <- predict.evgmrf(x, type = type, index = index, prob = prob, xid = xid, yid = yid)
   nms <- names(out)
   if (!missing(edge.drop))
     out <- lapply(out, .drop.edge, edrop = edge.drop)

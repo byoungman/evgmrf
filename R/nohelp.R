@@ -27,7 +27,8 @@
        reml_steptol = 1e-2, reml_stepmax = 1, reml_itlim = 1e2, inner_optim = 'chol',
        alpha.tol = 1e-6, grad_mult = 0, par_mult = 1, super = TRUE, update = FALSE, 
        openmp = TRUE, threads = 0, perturb.tol = 1e-2, perturb.mult = 5, 
-       perturb.method = 'chol', perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10)
+       perturb.method = 'chol', perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10,
+       sandwich = FALSE)
 }
 
 ## REML functions
@@ -117,6 +118,12 @@
   H <- likdata$mult * crossprod(likdata$X, H %*% likdata$X)
   out$H <- H + Q
   out
+}
+
+.J_Q <- function(pars, likdata, likfns, Q) {
+  pl <- split(pars, likdata$psplit)
+  pm <- t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
+  likfns$J(pm, likdata)
 }
 
 # # A should be a symmetric sparse matrix, e.g., class "dgCMatrix"

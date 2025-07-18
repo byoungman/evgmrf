@@ -8,6 +8,8 @@
 #' @param prob a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5
 #' @param index to do
 #' @param simplify2array to do
+#' @param xid to do
+#' @param yid to do
 #' @param loop to do
 #' @param progress to do
 #' @param chunksize to do
@@ -35,7 +37,7 @@
 #' @export
 #' 
 predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
-                           simplify2array = FALSE,
+                           simplify2array = FALSE, xid = 1:object$nx, yid = 1:object$ny,
                            loop = TRUE, progress = loop, chunksize = 1e2, se.method = 'direct',
                            nsim = 1e3, ...) {
   type0 <- type
@@ -72,6 +74,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       out[[i]] <- object$unlink[[i]](out[[i]])
     }
   }
+  out <- lapply(out, function(x) x[xid , yid, drop = FALSE])
   names(out) <- unlist(object$names[type0])
   if (simplify2array) {
     out <- array(unlist(out), dim = c(dim(out[[1]]), length(out)))
@@ -199,7 +202,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
             sek <- sqrt(Matrix::colSums(EJ * Matrix::solve(object$cholprecondHessian, EJ)))
           }
         }
-        se[[k]] <- matrix(sek, object$nx, object$ny)
+        se[[k]] <- matrix(sek, object$nx, object$ny)[xid, yid, drop = FALSE]
       }
       names(se) <- paste('q', prob, sep = '_')
     }

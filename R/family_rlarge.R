@@ -2,7 +2,7 @@
 
 .d0_rlarge <- function(pars_mat, likdata) {
   # rlargegmrfld0(pars_mat, likdata$z_cube)
-  .rlargegmrfld0(pars_mat, likdata$z)
+  .rlargegmrfld0(pars_mat, likdata$z, likdata$w)
 }  
 
 # .d1_rlarge <- function(pars_mat, likdata) {
@@ -19,7 +19,7 @@
 
 .d12_rlarge <- function(pars_mat, likdata) {
   # gH <- rlargegmrfld12(pars_mat, likdata$z_cube)
-  gH <- .rlargegmrfld12(pars_mat, likdata$z)
+  gH <- .rlargegmrfld12(pars_mat, likdata$z, likdata$w)
   list(g = as.vector(gH[, 1:3]), H = gH[, -c(1:3)]) 
 }
 
@@ -28,6 +28,8 @@
 .rlarge_fns$trans <- list(function(x) x, function(x) exp(x), function(x) 1.5 / (1 + exp(-x)) - 1)
 .rlarge_fns$names <- list(link = c('location', 'logscale', 'transshape'),
                     response = c('location', 'scale', 'shape'))
+
+## censored
 
 .d0_rlargec <- function(pars_mat, likdata) {
   .rlargecgmrfld0(pars_mat, likdata$z, likdata$drop)

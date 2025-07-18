@@ -64,10 +64,10 @@
   rho_spl <- rep(id, sapply(mods, .model2n))
   target <- unlist(list(icar = 1, car = c(1, -4), bym = c(1, -4))[mods])
   Ql <- list()
-  for (i in 1:3) {
-    if (i %in% order)
-      Ql[[i]] <- .make_Q(nx, ny, 1)
-  }
+  # for (i in 1:3) {
+  #   if (i %in% order)
+  #     Ql[[i]] <- .make_Q(nx, ny, 1)
+  # }
   # list(D = D, B = B, W = W, n = n, ldetD = ldetD, n_null = n_null, 
   #      ord = ords, mod = mods, spl = rho_spl, np = length(id), 
   #      target = target, Ql = Ql, nx = nx, ny = ny)
@@ -110,7 +110,7 @@
   Q
 }
 
-.mQ <- function(rho, Qd, alpha.tol = 1e-6) {
+.mQ <- function(rho, Qd, alpha.tol = 1e-6, mult = 1) {
   mods <- Qd$mod
   ords <- Qd$ord
   rho_spl <- .split2(rho, Qd$spl)
@@ -120,6 +120,8 @@
   }
   Q <- Matrix::.bdiag(Ql)
   attr(Q, 'logdet') <- sum(sapply(Ql, attr, 'logdet'))
+  if (mult != 1)
+    Q <- mult * Q
   Q
 }
 

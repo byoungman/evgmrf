@@ -10,7 +10,7 @@
   out <- fit$objective
   out <- out + .5 * attr(fit$gradient, 'ldet')
   out <- out - .5 * attr(Q, 'logdet')
-  out <- out + likdata$control$par_mult * sum((pars - Qd$target)^2)
+  # out <- out + likdata$control$par_mult * sum((pars - Qd$target)^2)
   out <- out + likdata$control$grad_mult * as.numeric(any(abs(fit$gradient) > 1))
   attr(out, 'beta') <- fit$par
   attr(out, 'gradient') <- fit$gradient

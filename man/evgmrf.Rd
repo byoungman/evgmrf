@@ -9,12 +9,14 @@ evgmrf(
   formula = ~-1,
   covariates,
   family = "gev",
-  inits = "same",
+  weights = 1,
+  inits = "different",
   model = "ICAR",
   W = NULL,
-  alpha0 = 1,
+  rho0 = 1,
   order = 1,
-  rho0,
+  lambda0,
+  alpha = NA,
   pp_nper,
   C = 1,
   tau,
@@ -40,17 +42,21 @@ evgmrf(
 
 \item{family}{to do}
 
+\item{weights}{to do}
+
 \item{inits}{to do}
 
 \item{model}{to do}
 
 \item{W}{adjacency matrix}
 
-\item{alpha0}{to do}
+\item{rho0}{to do}
 
 \item{order}{to do}
 
-\item{rho0}{(log of) initial smoothing parameter values; repeated if necessary}
+\item{lambda0}{(log of) initial smoothing parameter values; repeated if necessary}
+
+\item{alpha}{to do}
 
 \item{pp_nper}{to do}
 

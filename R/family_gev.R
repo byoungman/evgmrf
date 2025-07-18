@@ -14,36 +14,42 @@
 
 .d0_gev <- function(pars_mat, likdata) {
   if (likdata$openmp) {
-    out <- .tgevgmrfld0_omp(pars_mat, likdata$z, likdata$threads)
+    out <- .tgevgmrfld0_omp(pars_mat, likdata$z, likdata$w, likdata$threads)
   } else {
-    out <- .tgevgmrfld0(pars_mat, likdata$z)
+    out <- .tgevgmrfld0(pars_mat, likdata$z, likdata$w)
   } 
   out
 }  
 # 
 # .d1_gev <- function(pars_mat, likdata) {
-#   .tgevgmrfld1(pars_mat, likdata$z)[, 1]
+#   .tgevgmrfld1(pars_mat, likdata$z, likdata$w)[, 1]
 # }
 # 
 # .d2_gev <- function(pars_mat, likdata) {
-#   .tgevgmrfld2(pars_mat, likdata$z)
+#   .tgevgmrfld2(pars_mat, likdata$z, likdata$w)
 # }
 
 .d12_gev <- function(pars_mat, likdata) {
   if (likdata$openmp) {
-    gH <- .tgevgmrfld12_omp(pars_mat, likdata$z, likdata$threads)
+    gH <- .tgevgmrfld12_omp(pars_mat, likdata$z, likdata$w, likdata$threads)
   } else {
-    gH <- .tgevgmrfld12(pars_mat, likdata$z)
+    gH <- .tgevgmrfld12(pars_mat, likdata$z, likdata$w)
   }
-  list(g = as.vector(gH[, 1:3]), H = gH[, -c(1:3)]) 
+  out <- list(g = as.vector(gH[, 1:3]), H = gH[, -c(1:3)]) 
+  out
 }
+
+.J_gev <- function(pars_mat, likdata) {
+.tgevgmrfldJ(pars_mat, likdata$z, likdata$w)
+}
+
 # 
 # .d2_gevmat <- function(pars_mat, likdata) {
-#   .tgevgmrfld2mat(pars_mat, likdata$z)
+#   .tgevgmrfld2mat(pars_mat, likdata$z, likdata$w)
 # }
 
 # .gev_fns <- list(d0 = .d0_gev, d1 = .d1_gev, d2 = .d2_gev, d12 = .d12_gev)
-.gev_fns <- list(d0 = .d0_gev, d12 = .d12_gev)
+.gev_fns <- list(d0 = .d0_gev, d12 = .d12_gev, J = .J_gev)
 .gev_fns$trans <- list(function(x) x, function(x) exp(x), function(x) 1.5 / (1 + exp(-x)) - 1)
 
 attr(.gev_fns$trans, 'deriv') <- list(function(x) 1 + 0 * x, 

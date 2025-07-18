@@ -7,12 +7,14 @@
 #' @param formula to do
 #' @param covariates to do
 #' @param family to do
+#' @param weights to do
 #' @param inits to do
 #' @param model to do
 #' @param W adjacency matrix
-#' @param alpha0 to do
+#' @param rho0 to do
+#' @param alpha to do
 #' @param order to do
-#' @param rho0 (log of) initial smoothing parameter values; repeated if necessary
+#' @param lambda0 (log of) initial smoothing parameter values; repeated if necessary
 #' @param pp_nper to do
 #' @param C to do
 #' @param tau to do
@@ -46,8 +48,9 @@
 #' 
 #' @export
 #' 
-evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same',
-                   model = 'ICAR', W = NULL, alpha0 = 1, order = 1, rho0, # GMRF -1 assumes GMRF for each par
+evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, inits = 'different',
+                   model = 'ICAR', W = NULL, rho0 = 1, order = 1, lambda0, # GMRF -1 assumes GMRF for each par
+                   alpha = NA,
                    pp_nper,                    # point process
                    C = 1, tau,                 # ALD
                    rank = -1,
@@ -66,6 +69,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
   if (family == 'pproc') {
     z <- array(z, c(1, dim(z)))
   }
+  w <- 0 * z + weights
   control <- replace(.control.evgmrf(), names(control), control)
   .checks(model, order)
   # some basics
@@ -99,8 +103,10 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
     nx <- nx
     ny <- ny
     zm <- matrix(z, m)
+    wm <- matrix(w, m)
     n <- ncol(zm)
     zl <- lapply(1:n, function(i) zm[, i])
+    wl <- lapply(1:n, function(i) wm[, i])
     holes <- TRUE
   } else {
     if (rlargeish) {
@@ -109,10 +115,13 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
         ny <- dz[4]
         n <- nx * ny
         za <- array(z, c(m, r, n))
+        wa <- array(w, c(m, r, n))
         zl <- lapply(1:n, function(i) as.matrix(za[ , , i]))
+        wl <- lapply(1:n, function(i) as.matrix(wa[ , , i]))
       } else {
         n <- dz[3]
         zl <- lapply(1:n, function(i) as.matrix(z[ , , i]))
+        wl <- lapply(1:n, function(i) as.matrix(w[ , , i]))
         holes <- TRUE
       }
     } else {
@@ -120,12 +129,14 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
       ny <- dz[3]
       n <- nx * ny
       zm <- matrix(z, m)
+      wm <- matrix(w, m)
       zl <- lapply(1:n, function(i) zm[, i])
+      wl <- lapply(1:n, function(i) wm[, i])
     }
   }
   if (family == 'pp')
     zl <- lapply(zl, function(x) sort(x[!is.na(x)], decreasing = TRUE))
-  .ld <- list(n = n, z = zl, mult = 1 / gamma)
+  .ld <- list(n = n, z = zl, w = wl, mult = 1 / gamma)
   # .ld$z_cube <- array(unlist(.ld$z), c(dim(.ld$z[[1]])[1:2], length(.ld$z)))
   if (family == 'gpd') {
     .lf <- .gpd_fns
@@ -183,25 +194,24 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
   if (family == 'rlarge') {
     if (is.null(args$drop)) {
       .lf <- .rlarge_fns
-      if (inits == 'same') {
-        p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))))
-        p0m <- t(matrix(p0m1, 3, n))
-      } else {
-        p0m <- t(sapply(zl, function(x) .quick_tgev(x)))
-        set_to_mean <- is.na(p0m[, 1])
-        if (any(set_to_mean)) {
-          infill <- matrix(.quick_tgev(unlist(zl)), sum(set_to_mean), 3, byrow = TRUE)
-          p0m[set_to_mean, ] <- infill
-        }
+      p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))), args$delta)
+      p0m <- t(matrix(p0m1, 3, n))
+    if (inits == 'different') {
+      p0m <- t(sapply(lapply(zl, function(x) x[, 1]), .quick_tgev_shrink, delta = args$delta, pars0 = p0m1, mult = args$mult))
+      set_to_mean <- is.na(p0m[, 1])
+      if (any(set_to_mean)) {
+        infill <- matrix(.quick_tgev(unlist(lapply(zl, function(x) x[, 1])), delta = args$delta), sum(set_to_mean), 3, byrow = TRUE)
+        p0m[set_to_mean, ] <- infill
       }
+    }
     } else {
       .lf <- .rlargec_fns
       .ld$drop <- args$drop
       if (inits == 'same') {
-        p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))))
+        p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))), delta = args$delta)
         p0m <- t(matrix(p0m1, 3, n))
       } else {
-        p0m <- t(sapply(zl, function(x) .quick_tgev(x)))
+        p0m <- t(sapply(zl, function(x) .quick_tgev(x, delta = args$delta)))
         set_to_mean <- is.na(p0m[, 1])
         if (any(set_to_mean)) {
           infill <- matrix(.quick_tgev(unlist(zl)), sum(set_to_mean), 3, byrow = TRUE)
@@ -233,6 +243,8 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
       model <- rep(model, .ld$np)
     if (length(order) == 1)
       order <- rep(order, .ld$np)
+    if (length(alpha) == 1)
+      alpha <- rep(alpha, .ld$np)
   }  
   .ld$np <- sum(!is.na(model))
   # put together fixed effects stuff
@@ -271,7 +283,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
     if (nrow(W) != nrow(p0m)) 
       stop(paste('Supplied W dimension not compatible with data size:', nrow(W), '!=', nrow(p0m)))
   }
-  Qd0 <- .makeQ_data(nx, ny, model, order, nX1, W)
+  Qd0 <- .makeQ_data(nx, ny, model, order, alpha, nX1, W)
   .ld$Xl <- X1
   for (i in gmrf) {
     .ld$Xl[[i]] <- cbind(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
@@ -282,43 +294,52 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', inits = 'same'
   .ld$openmp <- control$openmp
   .ld$threads <- control$threads
   .ld$control <- control
-  rho0_temp <- as.vector(unlist(lapply(model, .inits_model)))
-  if (missing(rho0)) {
-    rho0 <- rho0_temp
+  # rho0_temp <- as.vector(unlist(lapply(model, .inits_model)))
+  lambda0_temp <- unlist(mapply(.inits_model, model, order, alpha, USE.NAMES = FALSE, SIMPLIFY = FALSE))
+  if (missing(lambda0)) {
+    lambda0 <- lambda0_temp
   } else {
-    if (length(rho0) < length(rho0_temp)) {
-      rho0 <- rep(rho0, length(model))
+    if (length(lambda0) < length(lambda0_temp)) {
+      lambda0 <- rep(lambda0, length(model))
     }
-    if (length(rho0) != length(rho0_temp))
+    if (length(lambda0) != length(lambda0_temp))
       stop('Invalid rho0 supplied')
   }
   p0v <- as.vector(p0m)
   p0v <- unlist(p0l)
-  attr(rho0, 'beta') <- p0v
-  attr(rho0, 'first') <- TRUE
+  attr(lambda0, 'beta') <- p0v
+  attr(lambda0, 'first') <- TRUE
+  if (control$sandwich) {
+    p0v <- .newton(p0v, .d0_Q, .search_Q, likdata = .ld, likfns = .lf, Q = .mQ(lambda0, Qd0, mult = 0))
+    J <- .J_Q(p0v$par, likdata = .ld, likfns = .lf, Q = .mQ(lambda0, Qd0, mult = 0))
+    H <- p0v$precondHessian
+    iHJ <- .cholsolveAB(p0v$precondHessian, as.vector(p0v$diagHessian) * J)
+    lambda <- eigen(iHJ, only.values = TRUE)$values
+    return(1 / mean(Re(lambda)))
+  }
   if ('diag' %in% inits.method)
-     p0v <- .newton_diag(.d0_Q, .d1_Q, .d2_Q_diag, p0v, max_iter=1e4, likdata = .ld, likfns = .lf, Q = .mQ(rho0, Qd0))
+     p0v <- .newton_diag(.d0_Q, .d1_Q, .d2_Q_diag, p0v, max_iter=1e4, likdata = .ld, likfns = .lf, Q = .mQ(lambda0, Qd0))
   # p0v <- .beta0(rho0, Qd0, .ld, .lf, .mQ, control$it0)$par
-  attr(rho0, 'beta') <- p0v
+  attr(lambda0, 'beta') <- p0v
   # .ld$L0 <- .chol0(p0v, .ld, .lf, .mQ(rho0, Qd0))
   if (control$inner_optim == 'Cholesky')
-    .ld$chol0 <- .Cholesky0(rho0, Qd0, control$super)
+    .ld$chol0 <- .Cholesky0(lambda0, Qd0, control$super)
   if (outer == 'nelder-mead') {
-    if (length(rho0) > 1) {
+    if (length(lambda0) > 1) {
       # out <- .nelder_mead_list(rho0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, trace = trace)
-      out <- .nelder_mead_discrete_list(rho0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
+      out <- .nelder_mead_discrete_list(lambda0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
                                         trace = trace, step_size = control$step_size)
     } else {
-      rho0[] <- 0
-      out <- .brent(rho0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, trace = trace)
+      lambda0[] <- 0
+      out <- .brent(lambda0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, trace = trace)
     }
   } else {
     if (outer == 'newton') {
-      out <- .newton(rho0, .reml0, .reml_step, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, reml = TRUE,
+      out <- .newton(lambda0, .reml0, .reml_step, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, reml = TRUE,
                     eps = control$reml_eps, direction = control$reml_direction, trace = trace > 0, gradtol = 1e-2, 
                     stepmax = control$reml_stepmax, steptol = control$reml_steptol, itlim = control$reml_itlim)
     } else {
-      out <- .BFGS(rho0, .reml0, .reml1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
+      out <- .BFGS(lambda0, .reml0, .reml1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
                    eps = control$reml_eps, direction = control$reml_direction, trace = trace > 0, gradtol = 1e-2, 
                    stepmax = control$reml_stepmax, steptol = control$reml_steptol)
     }
