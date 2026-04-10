@@ -1,6 +1,7 @@
-#include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(cpp11)]] 
+// [[Rcpp::plugins(cpp17)]]
+// [[Rcpp::plugins(openmp)]]
+
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
 

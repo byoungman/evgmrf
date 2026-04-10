@@ -1,13 +1,16 @@
-#define ARMA_USE_SUPERLU 1
-#define ARMA_64BIT_WORD 1
-#include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(cpp11)]] 
+// [[Rcpp::plugins(cpp17)]]
+// [[Rcpp::plugins(openmp)]]
+
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // [[Rcpp::export(.aldgmrfld0)]]
-double aldgmrfld0(arma::mat pars, arma::field<arma::vec> yc, double C, double tau)
+double aldgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, double C, double tau)
 {
   
   int n = yc.n_rows; // number of locations
@@ -15,44 +18,46 @@ double aldgmrfld0(arma::mat pars, arma::field<arma::vec> yc, double C, double ta
   
   double nllh = 0.0;
   
-  double y, mu, lpsi;
+  double y, w, mu, lpsi;
   double res;
-  arma::vec yv;
+  arma::vec yv, wv;
 
-  for (int i=0; i < n; i++) {
+  for (int j=0; j < n; j++) {
     
-    mu = pars(0, i);
-    lpsi = pars(1, i);
+    mu = pars(0, j);
+    lpsi = pars(1, j);
 
-    m = yc(i).size(); // number of obs
-    yv = yc(i);
+    m = yc(j).size(); // number of obs
+    yv = yc(j);
+    wv = wc(j);
     
     for (int k=0; k < m; k++) {
       
       y = yv(k);
+      w = wv(k);
       
       res = (y - mu) / exp(lpsi);
-      nllh += lpsi;
+      nllh += w * lpsi;
       
       if (res <= -C) {
         
-        nllh += (tau - 1.0) * (2.0 * res + C);
+        nllh += w * (tau - 1.0) * (2.0 * res + C);
         
       } else {
         
         if (res < 0.0) {
           
-          nllh += (1.0 - tau) * res * res / C;
+          nllh += w * (1.0 - tau) * res * res / C;
           
         } else {
           
           if (res <= C) {
             
-            nllh += tau * res * res / C;
+            nllh += w * tau * res * res / C;
             
           } else {
             
-            nllh += tau * (2.0 * res - C);
+            nllh += w * tau * (2.0 * res - C);
             
           }
         }
@@ -66,38 +71,33 @@ double aldgmrfld0(arma::mat pars, arma::field<arma::vec> yc, double C, double ta
   
 }
 
-// [[Rcpp::export(.aldgmrfld1)]]
-arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double tau)
+// [[Rcpp::export(.aldgmrfld12)]]
+arma::mat aldgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, double C, double tau)
 {
   
   int n = yc.n_rows; // number of locations
   int m;
   
-  double y, mu, lpsi;
+  double y, w, mu, lpsi;
   double res;
   double ee1, ee2, ee3, ee5, ee6, ee7;
-
-  arma::uvec id(2);
-  id(0) = 0;
-  id(1) = n;
-  arma::vec g(n * 2, arma::fill::zeros);
-  // arma::vec h(3, arma::fill::zeros);
-  // arma::sp_mat H(n * 2, n * 2);
-  arma::vec yv;
+  arma::vec yv, wv;
   
-  for (int i=0; i < n; i++) {
+  arma::mat out = arma::mat(n, 5, arma::fill::zeros);
+
+  for (int j=0; j < n; j++) {
     
-    mu = pars(0, i);
-    lpsi = pars(1, i);
+    mu = pars(0, j);
+    lpsi = pars(1, j);
     
-    m = yc(i).size(); // number of obs
-    yv = yc(i);
-    
-    // h.zeros();
+    m = yc(j).size(); // number of obs
+    yv = yc(j);
+    wv = wc(j);
     
     for (int k=0; k < m; k++) {
       
       y = yv(k);
+      w = wv(k);
       res = (y - mu) / exp(lpsi);
       
       if (res <= -C) {
@@ -107,12 +107,11 @@ arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double
         ee6 = 2 * (ee2 * (y - mu)/ee1);
         ee7 = 2 * (ee2/ee1);
         
-        g(id[0]) += -ee7;
-        g(id[1]) += 1 - ee6;
-        
-        // h(0) += 0;
-        // h(1) += ee7;
-        // h(2) += ee6;
+        out(j, 0) += w * (-ee7);
+        out(j, 1) += w * (1 - ee6);
+        out(j, 2) += w * (0);
+        out(j, 3) += w * (ee7);
+        out(j, 4) += w * (ee6);
         
       } else {
         
@@ -124,12 +123,11 @@ arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double
           ee5 = ee1 * ee3/ee2;
           ee7 = ee1 * ee3 * ee3/ee2;
           
-          g(id[0]) += -(2 * ee5);
-          g(id[1]) += 1 - 2 * ee7;
-          
-          // h(0) += 2 * (ee1/ee2);
-          // h(1) += 4 * ee5;
-          // h(2) += 4 * ee7;
+          out(j, 0) += w * (-(2 * ee5));
+          out(j, 1) += w * (1 - 2 * ee7);
+          out(j, 2) += w * (2 * (ee1/ee2));
+          out(j, 3) += w * (4 * ee5);
+          out(j, 4) += w * (4 * ee7);
           
         } else {
           
@@ -140,12 +138,11 @@ arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double
             ee5 = tau * ee2/ee1;
             ee7 = tau * ee2 * ee2/ee1;
             
-            g(id[0]) += -(2 * ee5);
-            g(id[1]) += 1 - 2 * ee7;
-            
-            // h(0) += 2 * (tau/ee1);
-            // h(1) += 4 * ee5;
-            // h(2) += 4 * ee7;
+            out(j, 0) += w * (-(2 * ee5));
+            out(j, 1) += w * (1 - 2 * ee7);
+            out(j, 2) += w * (2 * (tau/ee1));
+            out(j, 3) += w * (4 * ee5);
+            out(j, 4) += w * (4 * ee7);
             
           } else {
             
@@ -153,12 +150,11 @@ arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double
             ee2 = 2 * (tau * (y - mu)/ee1);
             ee3 = 2 * (tau/ee1);
             
-            g(id[0]) += -ee3;
-            g(id[1]) += 1 - ee2;
-            
-            // h(0) += 0;
-            // h(1) += ee3;
-            // h(2) += ee2;
+            out(j, 0) += w * (-ee3);
+            out(j, 1) += w * (1 - ee2);
+            out(j, 2) += w * (0);
+            out(j, 3) += w * (ee3);
+            out(j, 4) += w * (ee2);
             
           }
         }
@@ -166,51 +162,46 @@ arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double
       
     }
     
-    // H(id(0), id(0)) = h(0);
-    // H(id(1), id(0)) = h(1);
-    // H(id(0), id(1)) = h(1);
-    // H(id(1), id(1)) = h(2);
-
-    id += 1;
-    
   }
   
-  return g;
+  return out;
   
 }
 
-// [[Rcpp::export(.aldgmrfld2)]]
-arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, double tau)
+// [[Rcpp::export(.aldgmrfldJ)]]
+arma::mat aldgmrfldJ(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, double C, double tau)
 {
   
   int n = yc.n_rows; // number of locations
   int m;
   
-  double y, mu, lpsi;
+  double y, w, mu, lpsi;
   double res;
   double ee1, ee2, ee3, ee5, ee6, ee7;
-  arma::vec yv;
+  arma::vec yv, wv;
   
   arma::uvec id(2);
   id(0) = 0;
   id(1) = n;
-  // arma::vec g(n * 2, arma::fill::zeros);
-  arma::vec h(3, arma::fill::zeros);
-  arma::sp_mat H(n * 2, n * 2);
+  
+  arma::mat h = arma::mat(n, 3, arma::fill::zeros);
+  arma::cube g = arma::cube(n, m, 2, arma::fill::zeros);
 
-  for (int i=0; i < n; i++) {
+  for (int j=0; j < n; j++) {
     
-    mu = pars(0, i);
-    lpsi = pars(1, i);
+    mu = pars(0, j);
+    lpsi = pars(1, j);
     
-    m = yc(i).size(); // number of obs
-    yv = yc(i);
+    m = yc(j).size(); // number of obs
+    yv = yc(j);
+    wv = wc(j);
     
     h.zeros();
     
     for (int k=0; k < m; k++) {
       
       y = yv(k);
+      w = wv(k);
       res = (y - mu) / exp(lpsi);
       
       if (res <= -C) {
@@ -220,12 +211,11 @@ arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, dou
         ee6 = 2 * (ee2 * (y - mu)/ee1);
         ee7 = 2 * (ee2/ee1);
         
-        // g(id[0]) += -ee7;
-        // g[id[1]) += 1 - ee6;
-        
-        h(0) += 0;
-        h(1) += ee7;
-        h(2) += ee6;
+        g(j, k, 0) = w * (-ee7);
+        g(j, k, 1) = w * (1 - ee6);
+        h(j, 0) += w * (0);
+        h(j, 1) += w * (ee7);
+        h(j, 2) += w * (ee6);
         
       } else {
         
@@ -237,12 +227,11 @@ arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, dou
           ee5 = ee1 * ee3/ee2;
           ee7 = ee1 * ee3 * ee3/ee2;
           
-          // g(id[0]) += -(2 * ee5);
-          // g(id[1]) += 1 - 2 * ee7;
-          
-          h(0) += 2 * (ee1/ee2);
-          h(1) += 4 * ee5;
-          h(2) += 4 * ee7;
+          g(j, k, 0) = w * (-(2 * ee5));
+          g(j, k, 1) = w * (1 - 2 * ee7);
+          h(j, 2) += w * (2 * (ee1/ee2));
+          h(j, 3) += w * (4 * ee5);
+          h(j, 4) += w * (4 * ee7);
           
         } else {
           
@@ -253,12 +242,11 @@ arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, dou
             ee5 = tau * ee2/ee1;
             ee7 = tau * ee2 * ee2/ee1;
             
-            // g(id[0]) += -(2 * ee5);
-            // g(id[1]) += 1 - 2 * ee7;
-            
-            h(0) += 2 * (tau/ee1);
-            h(1) += 4 * ee5;
-            h(2) += 4 * ee7;
+            g(j, k, 0) = w * (-(2 * ee5));
+            g(j, k, 1) = w * (1 - 2 * ee7);
+            h(j, 2) += w * (2 * (tau/ee1));
+            h(j, 3) += w * (4 * ee5);
+            h(j, 4) += w * (4 * ee7);
             
           } else {
             
@@ -266,12 +254,11 @@ arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, dou
             ee2 = 2 * (tau * (y - mu)/ee1);
             ee3 = 2 * (tau/ee1);
             
-            // g(id[0]) += -ee3;
-            // g(id[1]) += 1 - ee2;
-            
-            h(0) += 0;
-            h(1) += ee3;
-            h(2) += ee2;
+            g(j, k, 0) = w * (-ee3);
+            g(j, k, 1) = w * (1 - ee2);
+            h(j, 2) += w * (0);
+            h(j, 3) += w * (ee3);
+            h(j, 4) += w * (ee2);
             
           }
         }
@@ -279,15 +266,20 @@ arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, dou
       
     }
     
-    H(id(0), id(0)) = h(0);
-    H(id(1), id(0)) = h(1);
-    H(id(0), id(1)) = h(1);
-    H(id(1), id(1)) = h(2);
-    
-    id += 1;
-    
   }
   
-  return H;
-  
+  arma::mat G = arma::mat(2 * n, 2 * n, arma::fill::zeros);
+  arma::mat Gk;
+  arma::vec Gk2;
+    
+  for (int k=0; k < m; k++) {  
+    Gk = g.col(k);
+    Gk2 = arma::vectorise(Gk);
+    G += Gk2 * Gk2.t();
+  }
+    
+  return G;
+
 }
+
+

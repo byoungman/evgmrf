@@ -320,7 +320,7 @@ arma::mat tppz2(arma::vec pars, arma::vec zv)
     out += tppz0(pars, zv);
     out += 0.5 * delta * (pars(2) - 0.7) * (pars(2) - 0.7);
     
-    if(!arma::is_finite(out)) {
+    if(!std::isfinite(out)) {
       out = 1e20;
     }
     
