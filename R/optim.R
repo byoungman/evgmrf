@@ -6,6 +6,8 @@
   okay <- TRUE
   f0 <- fn(pars, ...)
   b0 <- attr(f0, 'beta')
+  attr(pars, "beta") <- attr(f0, "beta")
+  attr(pars, "betal") <- attr(f0, "betas")
   step1 <- NULL
   
   if (itlim == 1) {
@@ -58,13 +60,15 @@
         report <- c("step tolerance reached")
       } else {
         theta1 <- pars - step
-        attr(theta1, 'beta') <- b0
+        attr(theta1, "names") <- attr(pars, "names")
+        # attr(theta1, 'beta') <- b0
         f1 <- fn(theta1, ...)
         d <- f1 - f0
         if (!is.finite(d)) 
           d <- 10
         if (d < 0) {
           attr(theta1, "beta") <- attr(f1, "beta")
+          attr(theta1, "betal") <- attr(f1, "betas")
           step1 <- try(sfn(theta1, ...), silent = TRUE)
           if (inherits(step1, "try-error")) 
             d <- 1
@@ -306,10 +310,12 @@
     while(ls & is.null(report)) {
       step <- alpha * step0
       stepokay <- all(abs(step) > steptol)
+      stepokay[!is.finite(stepokay)] <- TRUE
       if (!stepokay) {
         report <- c("step tolerance reached")
       } else {
         theta1 <- pars - step
+        attr(theta1, "names") <- attr(pars, "names")
         f1 <- fn(theta1, ...)
         d <- f1 - f0
         if (d < 0) {
@@ -711,7 +717,10 @@
   
   # Function to round to nearest multiple of step_size
   round_to_step <- function(x) {
-    return(round(x / step_size) * step_size)
+    x0 <- x
+    x <- round(x / step_size) * step_size
+    attributes(x) <- attributes(x0)
+    x
   }
   
   # Round initial point to nearest multiple of step_size
@@ -724,6 +733,7 @@
   f_values_list[[1]] <- f(init, ...)
   
   attr(init, 'beta') <- attr(f_values_list[[1]], 'beta')
+  attr(init, 'betal') <- attr(f_values_list[[1]], 'betal')
   
   if (trace > 0) {
     cat(paste('Iteration:', 0))
@@ -779,7 +789,11 @@
     f_values <- f_values[order_idx]
     f_values_list <- f_values_list[order_idx]
     b0 <- attr(f_values_list[[1]], 'beta')
-    for (i in seq_along(simplex)) attr(simplex[[i]], 'beta') <- b0
+    bl <- attr(f_values_list[[1]], 'betal')
+    for (i in seq_along(simplex)) {
+      attr(simplex[[i]], 'beta') <- b0
+      attr(simplex[[i]], 'betal') <- bl
+    }
     
     # Centroid of all points except the worst
     centroid <- rowMeans(do.call(cbind, simplex[1:n]))
@@ -816,6 +830,7 @@
       diff_vector <- diff_vector / sqrt(sum(diff_vector^2)) * step_size
       x_reflect <- round_to_step(centroid + diff_vector)
       attr(x_reflect, 'beta') <- b0
+      attr(x_reflect, 'betal') <- bl
     }
     
     f_reflect <- f(x_reflect, ...)
@@ -833,6 +848,7 @@
         diff_vector <- diff_vector / sqrt(sum(diff_vector^2)) * step_size
         x_expand <- round_to_step(x_reflect + diff_vector)
         attr(x_expand, 'beta') <- b0
+        attr(x_expand, 'betal') <- bl
       }
       
       f_expand <- f(x_expand, ...)
@@ -869,6 +885,7 @@
         diff_vector <- diff_vector / sqrt(sum(diff_vector^2)) * step_size
         x_contract <- round_to_step(centroid + diff_vector)
         attr(x_contract, 'beta') <- b0
+        attr(x_contract, 'betal') <- bl
       }
       
       f_contract <- f(x_contract, ...)
@@ -927,6 +944,7 @@
   
   f1 <- f_values[1]
   attr(f1, 'beta') <- attr(simplex[[1]], 'beta')
+  attr(f1, 'betal') <- attr(simplex[[1]], 'betal')
   out <- list(par = as.vector(simplex[[1]]))
   out$objective <- as.vector(f1)
   out$iterations <- iter

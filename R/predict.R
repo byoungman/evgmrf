@@ -15,7 +15,9 @@
 #' @param chunksize to do
 #' @param se.method to do
 #' @param nsim to do
+#' @param decompose to do
 #' @param ... unused
+#' @param sdif standard deviation inflation factor; defaults to 1
 #' 
 #' @details
 #' 
@@ -39,14 +41,16 @@
 predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
                            simplify2array = FALSE, xid = 1:object$nx, yid = 1:object$ny,
                            loop = TRUE, progress = loop, chunksize = 1e2, se.method = 'direct',
-                           nsim = 1e3, ...) {
+                           nsim = 1e3, decompose = FALSE, sdif = 1, ...) {
+  if (se.fit & decompose)
+    stop("Decomposed parameters can only be plotted for type = 'link'.")
   type0 <- type
   if (!is.null(prob))
     type <- 'quantile'
   if (type == 'quantile')
     type0 <- 'response'
-  out <- .fitted_values(object$beta, object$likdata)
-  np <- object$likdata$np0
+  out <- .fitted_values(object$beta, object$likdata, decompose)
+  np <- nrow(out)#object$likdata$np0
   if (!object$holes) {
     out <- lapply(1:np, function(i) matrix(out[i, ], object$nx))
   } else {
@@ -65,6 +69,19 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
   # if (type == 'response') {
   #   for (i in 1:np) out[[i]] <- object$likfns$trans[[i]](out[[i]])
   # }
+  nms <- as.list(object$names[[type0]])
+  if (decompose) {
+    is.bym2 <- which(object$model %in% paste('bym', 2:4, sep = ''))
+    if (length(is.bym2)) {
+      for (i in is.bym2)
+        nms[[i]] <- paste(nms[[i]], c('spatial', 'random'), sep = ': ')
+    }
+  }
+  names(out) <- unlist(nms)
+  if (type != 'link' & decompose) {
+    if(any(paste('bym', 2:4, sep = '') %in% object$model))
+      out <- out[- grep('random', names(out))]
+  }
   if (type %in% c('response', 'quantile')) {
     if (se.fit) {
       out0 <- out
@@ -75,11 +92,14 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
     }
   }
   out <- lapply(out, function(x) x[xid , yid, drop = FALSE])
-  names(out) <- unlist(object$names[type0])
   if (simplify2array) {
     out <- array(unlist(out), dim = c(dim(out[[1]]), length(out)))
     # for (i in 1:object$np)
     #   out[[i]] <- drop(array(lst[[i]], c(object$nx, object$ny, nsim)))
+  }
+  if (type != 'link' & decompose) {
+    names(out) <- gsub(': spatial', '', names(out))
+    names(out) <- gsub(': random', '', names(out))
   }
   if (type == 'quantile') {
     nprob <- length(prob)
@@ -98,8 +118,25 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
     }
   }
   if (se.fit) {
-    if (progress) cat('Calculating standard errors...\n')
     nv <- nrow(object$Hessian)
+    dH <- object$diagHessian
+    cpH <- object$cholprecondHessian
+    if (progress) cat('Calculating standard errors...\n')
+    id_bym2 <- object$likdata$id_bym2
+    if (any(unlist(id_bym2))) {
+      id_bym2_mat <- lapply(id_bym2, function(x) length(x) / object$n)
+      XX <- lapply(id_bym2_mat, function(i) lapply(1:i, function(.) Matrix::Diagonal(n = object$n, x = 1)))
+      XX <- lapply(XX, function(x) do.call(rbind, x))
+      XX <- Matrix::bdiag(XX)
+      H <- Matrix::crossprod(XX, object$Hessian) %*% XX
+      nv <- nrow(H)
+      dH <- pmax(Matrix::diag(H), 1e-8)
+      D <- Matrix::Diagonal(nrow(H), 1 / sqrt(dH))
+      H <- D %*% H %*% D
+      cpH <- Matrix::Cholesky(H, super = object$likdata$control$super, LDL = FALSE)
+      # H <- .perturb(H, rnorm(nrow(H)), object$likdata$control$perturb.tol, object$likdata$control$perturb.mult)
+      # cpH <- attr(H, 'chol')
+    }
     if (type %in% c('link', 'response')) {
       if (se.method == 'simulation') {
         if (progress) 
@@ -107,8 +144,8 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
         spl <- split(1:nsim, c(0:(nsim - 1)) %/% chunksize)
         se <- numeric(nv)
         for (j in 1:length(spl)) {
-          z <- matrix(sample(c(-1, 1), length(spl[[j]]) * nv, replace = TRUE), nv)
-          mat <- .solve_pchol(object$cholprecondHessian, z)
+          z <- matrix(sample(c(-sdif, sdif), length(spl[[j]]) * nv, replace = TRUE), nv)
+          mat <- .solve_pchol(cpH, z)
           se <- se + rowSums(mat * mat)
           if (progress) setTxtProgressBar(pb, j)
         }
@@ -117,8 +154,8 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
         if (progress)
           pb <- txtProgressBar(min = 0, max = nv / chunksize, style = 3)
         if (!loop) {
-          t1 <- Matrix::solve(object$cholprecondHessian, Matrix::Diagonal(nv))
-          se <- object$diagHessian * sqrt(Matrix::diag(t1))
+          t1 <- Matrix::solve(cpH, Matrix::Diagonal(nv))
+          se <- dH * sqrt(Matrix::diag(t1))
         } else {
           se <- rep(NA, nv)
         # for (j in 1:nv) {
@@ -131,8 +168,8 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
           for (j in 1:length(spl)) {
             ind <- spl[[j]]
             Ej <- Matrix::sparseMatrix(i = ind, j = seq_along(ind), x = 1, dims = c(nv, length(ind)))
-            v <- Matrix::solve(object$cholprecondHessian, Ej)
-            se[ind] <- object$diagHessian[ind] * sqrt(v[cbind(ind, seq_along(ind))])
+            v <- Matrix::solve(cpH, Ej)
+            se[ind] <- sdif * dH[ind] * sqrt(v[cbind(ind, seq_along(ind))])
             if (progress) setTxtProgressBar(pb, j)
           }
         }
@@ -159,8 +196,8 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
           for (j in 1:length(spl)) {
             z <- matrix(rnorm(length(spl[[j]]) * nv), ncol = length(spl[[j]]))
             lst <- list()
-            mat <- .solve_pchol(object$cholprecondHessian, z)
-            mat <- object$beta + object$diagHessian * mat
+            mat <- .solve_pchol(cpH, sdif * z)
+            mat <- object$beta + dH * mat
             for (i in 1:object$np) {
               lst[[i]] <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
               lst[[i]] <- object$X[[i]] %*% lst[[i]]
@@ -175,7 +212,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
         } else {
           out0$p <- prob[k]
           J <- do.call(attr(object$quantile0, 'deriv'), out0)
-          J <- object$diagHessian * matrix(J, ncol = object$np)
+          J <- dH * matrix(J, ncol = object$np)
           if (loop) {
           # for (j in 1:object$n) {
           #   ind <- ind0 + j
@@ -191,15 +228,15 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
               indr <- as.integer(outer(ind0, ind, FUN = '+'))
               indc <- rep(seq_along(ind), each = object$np)
               Ej <- Matrix::sparseMatrix(i = indr, j = indc, x = Jj, dims = c(nv, length(ind)))
-              temp <- Matrix::solve(object$cholprecondHessian, Ej)[indr, ]
-              sek[ind] <- sqrt(Matrix::colSums(Ej[indr, ] * temp))
+              temp <- Matrix::solve(cpH, Ej)[indr, , drop = FALSE]
+              sek[ind] <- sdif * sqrt(Matrix::colSums(Ej[indr, , drop = FALSE ] * temp))
               if (progress) setTxtProgressBar(pb, j)
             }
           } else {
             indr <- as.integer(outer(ind0, 1:object$n, FUN = '+'))
             indc <- rep(1:object$n, each = object$np)
             EJ <- Matrix::sparseMatrix(i = indr, j = indc, x = as.vector(t(J)), dims = c(nv, object$n))
-            sek <- sqrt(Matrix::colSums(EJ * Matrix::solve(object$cholprecondHessian, EJ)))
+            sek <- sdif * sqrt(Matrix::colSums(EJ * Matrix::solve(cpH, EJ)))
           }
         }
         se[[k]] <- matrix(sek, object$nx, object$ny)[xid, yid, drop = FALSE]
@@ -215,7 +252,17 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
   out
 }
 
-.fitted_values <- function(pars, likdata) {
+.fitted_values <- function(pars, likdata, decompose = FALSE) {
   pl <- split(pars, likdata$psplit)
-  t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
+  if (!decompose) {
+    out <- t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
+  } else {
+    Xlc <- likdata$Xlc
+    Xlc <- lapply(likdata$Xlc, function(x) x[sapply(x, ncol) > 0])
+    plc <- lapply(seq_along(pl), function(i) split(pl[[i]], rep(seq_along(Xlc[[i]]), sapply(Xlc[[i]], ncol))))
+    Xlc <- unlist(Xlc, recursive = FALSE)
+    plc <- unlist(plc, recursive = FALSE)
+    out <- t(sapply(seq_along(plc), function(i) as.vector(Xlc[[i]] %*% plc[[i]])))
+  }
+  out
 }

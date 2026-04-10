@@ -12,6 +12,7 @@
 #' @param xid to do
 #' @param yid to do
 #' @param nrc to do
+#' @param decompose to do
 #' @param ... arguments passed to \code{lattice::levelplot}
 #' 
 #' @details
@@ -35,8 +36,10 @@
 #' 
 plot.evgmrf <- function(x, type = 'link', prob = NULL, 
                         lims = NULL, nlev = NULL, edge.drop, index = x$index, 
-                        xid = 1:x$nx, yid = 1:x$ny, nrc = NULL, ...) {
-  out <- predict.evgmrf(x, type = type, index = index, prob = prob, xid = xid, yid = yid)
+                        xid = 1:x$nx, yid = 1:x$ny, nrc = NULL, decompose = FALSE, layout = NULL, 
+                        ...) {
+  out <- predict.evgmrf(x, type = type, index = index, prob = prob, 
+                        xid = xid, yid = yid, decompose = decompose)
   nms <- names(out)
   if (!missing(edge.drop))
     out <- lapply(out, .drop.edge, edrop = edge.drop)
@@ -54,10 +57,20 @@ plot.evgmrf <- function(x, type = 'link', prob = NULL,
     nlev <- rep(nlev, length(out))
   plots <- lapply(1:length(out), function(i) 
     lattice::levelplot(out[[i]], at = pretty(lims[[i]], nlev), main = nms[i], ...))
+  if (is.null(layout)) {
+    lm <- matrix(1:(nrc[1] * nrc[2]), nrc[1], byrow = !decompose)
+  } else {
+    if (is.matrix(layout)) {
+      lm <- layout
+    } else {
+      lm <- matrix(layout, nrc[1], byrow = !decompose)
+    }
+  }
   gridExtra::grid.arrange(
     grobs = plots,
-    ncol = nrc[2], # Number of columns
-    nrow = nrc[1]  # Number of rows
+    layout_matrix = lm
+    # ncol = nrc[2], # Number of columns
+    # nrow = nrc[1]  # Number of rows
   )
 }
 

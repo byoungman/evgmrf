@@ -1,6 +1,22 @@
 .reml0 <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps, direction) {
   beta <- attr(pars, 'beta')
   Q <- makeQ(pars, Qd, likdata$control$alpha.tol)
+  # derivative test
+  # browser()
+  # n_test <- 2
+  # t1 <- likdata
+  # t1$z <- t1$z[1:n_test]
+  # id_test <- as.integer(matrix(1:length(beta), length(likdata$z))[1:n_test, , drop = FALSE])
+  # t2 <- beta[id_test]
+  # t3 <- Q[id_test, id_test]
+  # t1$psplit <- likdata$psplit[id_test]
+  # t1$Xl <- lapply(t1$Xl, function(x) x[1:n_test, 1:n_test, drop = FALSE])
+  # t1$X <- likdata$X[id_test, id_test]
+  # t1$u <- t1$u[1:n_test]
+  # t1$uw <- t1$uw[1:n_test]
+  # .d0_Q(t2, t1, likfns, t3)
+  # numDeriv::grad(function(x) .d0_Q(x, t1, likfns, t3), t2)
+  # .d12_Q(t2, t1, likfns, t3)
   if (is.null(attr(pars, 'first'))) {
     fit <- .newton(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, stepmax = 3)
   } else {
@@ -10,7 +26,7 @@
   out <- fit$objective
   out <- out + .5 * attr(fit$gradient, 'ldet')
   out <- out - .5 * attr(Q, 'logdet')
-  # out <- out + likdata$control$par_mult * sum((pars - Qd$target)^2)
+  out <- out + likdata$control$par_mult * sum((pars - unlist(Qd$target))^2)
   out <- out + likdata$control$grad_mult * as.numeric(any(abs(fit$gradient) > 1))
   attr(out, 'beta') <- fit$par
   attr(out, 'gradient') <- fit$gradient

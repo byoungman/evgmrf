@@ -30,7 +30,7 @@
 #' @export
 #' 
 simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob = NULL,
-                            simplify2array = TRUE, ...) {
+                            simplify2array = TRUE, decompose = FALSE, ...) {
   if(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
     runif(1) # initialize the RNG if necessary
   if(is.null(seed)) {
@@ -46,14 +46,29 @@ simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob =
     type <- 'quantile'
   if (type == 'quantile')
     type0 <- 'response'
-  nH <- length(object$diagHessian)
+  dH <- object$diagHessian
+  cpH <- object$cholprecondHessian
+  nH <- length(dH)
   z <- matrix(rnorm(nsim * nH), ncol = nsim)
-  mat <- .solve_pchol(object$cholprecondHessian, z)
-  mat <- object$beta + object$diagHessian * mat
+  mat <- .solve_pchol(cpH, z)
+  mat <- object$beta + dH * mat
   lst <- list()
   for (i in 1:object$np) {
     lst[[i]] <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
-    lst[[i]] <- object$X[[i]] %*% lst[[i]]
+    if (decompose &  object$model[i] %in% paste('bym', 2:4, sep = '')) {
+      Xlc <- object$likdata$Xlc[[i]]
+      Xlc <- Xlc[sapply(Xlc, ncol) > 0]
+      ind <- 1:length(Xlc)
+      spl <- rep(ind, sapply(Xlc, ncol))
+      pl <- lapply(ind, function(j) lst[[i]][spl == j, , drop = FALSE])
+      lst[[i]] <- lapply(ind, function(j) Xlc[[j]] %*% pl[[j]])
+    } else {
+      lst[[i]] <- object$X[[i]] %*% lst[[i]]
+    }
+  }
+  if (decompose) {
+    lst <- unlist(lst, recursive = FALSE)
+    return(lst)
   }
   if (type %in% c('response', 'quantile')) {
     for (i in 1:object$np) {

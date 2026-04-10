@@ -11,13 +11,22 @@
   psi0 <- (mean(y) - mu0) * (1 - xi0)
   txi0 <- -log(1.5 / (1 + xi0) - 1)
   inits <- c(mu0, log(psi0), -log(.36))
-  fit <- nlminb(inits, .tpp0, .tpp1, .tpp2, zv = y, w = m, u = u, delta = delta)$par
-  fit
+  fit <- nlminb(inits, .tpp0, .tpp1, .tpp2, zv = y, w = m, u = u, delta = delta)
+  fit$par
 }
 
 .d0_pp <- function(pars_mat, likdata) {
-  out <- .tppugmrfld0(pars_mat, likdata$u, likdata$m)
-  out <- out + .tppzgmrfld0(pars_mat, likdata$z)
+  out <- .tppugmrfld0(pars_mat, likdata$u, likdata$uw)
+  out <- out + .tppzgmrfld0(pars_mat, likdata$z, likdata$w)
+  # browser()
+  # check
+  # n_test <- 2
+  # id_test <- as.integer(matrix(1:length(pars_mat), length(likdata$z))[1:n_test, , drop = FALSE])
+  # g1 <- numDeriv::grad(function(x) .tppzgmrfld0(matrix(x, 3), likdata$z[1:n_test], likdata$w[1:n_test]), as.vector(pars_mat[, 1:n_test]))
+  # out <- t(.tppzgmrfld12(pars_mat[, 1:n_test], likdata$z[1:n_test], likdata$w[1:n_test])[, 1:3])
+  # g1 <- numDeriv::grad(function(x) .tppugmrfld0(matrix(x, 3), likdata$u[1:n_test], likdata$uw[1:n_test]), as.vector(pars_mat[, 1:n_test]))
+  # g2 <- t(.tppugmrfld12(pars_mat[, 1:n_test], likdata$u[1:n_test], likdata$uw[1:n_test])[, 1:3])
+  # evgmrf:::.tppu1(pars_mat[, 1], likdata$u[1], likdata$uw[1])
   out
 }
 
@@ -38,8 +47,13 @@
 # }
 
 .d12_pp <- function(pars_mat, likdata) {
-  gH <- .tppugmrfld12(pars_mat, likdata$u, likdata$m)
-  gH <- gH + .tppzgmrfld12(pars_mat, likdata$z)
+  if (likdata$openmp) {
+    gH <- .tppugmrfld12(pars_mat, likdata$u, likdata$uw)
+    gH <- gH + .tppzgmrfld12(pars_mat, likdata$z, likdata$w)
+  } else {
+    gH <- .tppugmrfld12(pars_mat, likdata$u, likdata$uw)
+    gH <- gH + .tppzgmrfld12(pars_mat, likdata$z, likdata$w)
+  }
   list(g = as.vector(gH[, 1:3]), H = gH[, -c(1:3)]) 
 }
 
