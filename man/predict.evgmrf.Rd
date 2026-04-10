@@ -18,6 +18,8 @@
   chunksize = 100,
   se.method = "direct",
   nsim = 1000,
+  decompose = FALSE,
+  sdif = 1,
   ...
 )
 }
@@ -47,6 +49,10 @@
 \item{se.method}{to do}
 
 \item{nsim}{to do}
+
+\item{decompose}{to do}
+
+\item{sdif}{standard deviation inflation factor; defaults to 1}
 
 \item{...}{unused}
 }

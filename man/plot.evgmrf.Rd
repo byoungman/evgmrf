@@ -15,6 +15,8 @@
   xid = 1:x$nx,
   yid = 1:x$ny,
   nrc = NULL,
+  decompose = FALSE,
+  layout = NULL,
   ...
 )
 }
@@ -38,6 +40,8 @@
 \item{yid}{to do}
 
 \item{nrc}{to do}
+
+\item{decompose}{to do}
 
 \item{...}{arguments passed to \code{lattice::levelplot}}
 }

@@ -11,6 +11,7 @@
   type = "link",
   prob = NULL,
   simplify2array = TRUE,
+  decompose = FALSE,
   ...
 )
 }

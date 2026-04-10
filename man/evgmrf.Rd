@@ -18,8 +18,6 @@ evgmrf(
   lambda0,
   alpha = NA,
   pp_nper,
-  C = 1,
-  tau,
   rank = -1,
   args = list(),
   control = list(),
@@ -30,7 +28,9 @@ evgmrf(
   ny = NULL,
   index = NULL,
   infill = FALSE,
-  inits.method = "reml"
+  cv = FALSE,
+  inits.method = "reml",
+  auto.weights = FALSE
 )
 }
 \arguments{
@@ -60,10 +60,6 @@ evgmrf(
 
 \item{pp_nper}{to do}
 
-\item{C}{to do}
-
-\item{tau}{to do}
-
 \item{rank}{to do}
 
 \item{args}{to do}
@@ -82,7 +78,15 @@ evgmrf(
 
 \item{infill}{infill grid holes values during inference?}
 
+\item{cv}{use cross-validation mode?}
+
 \item{inits.method}{to do}
+
+\item{auto.weights}{to do}
+
+\item{C}{to do}
+
+\item{tau}{to do}
 }
 \value{
 An object of class \code{evgmrf}
