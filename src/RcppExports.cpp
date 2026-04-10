@@ -13,44 +13,47 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // aldgmrfld0
-double aldgmrfld0(arma::mat pars, arma::field<arma::vec> yc, double C, double tau);
-RcppExport SEXP _evgmrf_aldgmrfld0(SEXP parsSEXP, SEXP ycSEXP, SEXP CSEXP, SEXP tauSEXP) {
+double aldgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, double C, double tau);
+RcppExport SEXP _evgmrf_aldgmrfld0(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP CSEXP, SEXP tauSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< double >::type C(CSEXP);
     Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
-    rcpp_result_gen = Rcpp::wrap(aldgmrfld0(pars, yc, C, tau));
+    rcpp_result_gen = Rcpp::wrap(aldgmrfld0(pars, yc, wc, C, tau));
     return rcpp_result_gen;
 END_RCPP
 }
-// aldgmrfld1
-arma::vec aldgmrfld1(arma::mat pars, arma::field<arma::vec> yc, double C, double tau);
-RcppExport SEXP _evgmrf_aldgmrfld1(SEXP parsSEXP, SEXP ycSEXP, SEXP CSEXP, SEXP tauSEXP) {
+// aldgmrfld12
+arma::mat aldgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, double C, double tau);
+RcppExport SEXP _evgmrf_aldgmrfld12(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP CSEXP, SEXP tauSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< double >::type C(CSEXP);
     Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
-    rcpp_result_gen = Rcpp::wrap(aldgmrfld1(pars, yc, C, tau));
+    rcpp_result_gen = Rcpp::wrap(aldgmrfld12(pars, yc, wc, C, tau));
     return rcpp_result_gen;
 END_RCPP
 }
-// aldgmrfld2
-arma::sp_mat aldgmrfld2(arma::mat pars, arma::field<arma::vec> yc, double C, double tau);
-RcppExport SEXP _evgmrf_aldgmrfld2(SEXP parsSEXP, SEXP ycSEXP, SEXP CSEXP, SEXP tauSEXP) {
+// aldgmrfldJ
+arma::mat aldgmrfldJ(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, double C, double tau);
+RcppExport SEXP _evgmrf_aldgmrfldJ(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP CSEXP, SEXP tauSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< double >::type C(CSEXP);
     Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
-    rcpp_result_gen = Rcpp::wrap(aldgmrfld2(pars, yc, C, tau));
+    rcpp_result_gen = Rcpp::wrap(aldgmrfldJ(pars, yc, wc, C, tau));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -146,6 +149,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tgevgmrfldJarr
+arma::cube tgevgmrfldJarr(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc);
+RcppExport SEXP _evgmrf_tgevgmrfldJarr(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgevgmrfldJarr(pars, yc, wc));
+    return rcpp_result_gen;
+END_RCPP
+}
 // tgevgmrfld0_omp
 double tgevgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
 RcppExport SEXP _evgmrf_tgevgmrfld0_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
@@ -213,27 +229,136 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tgev1sand
+arma::mat tgev1sand(arma::vec pars, arma::vec yv);
+RcppExport SEXP _evgmrf_tgev1sand(SEXP parsSEXP, SEXP yvSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type yv(yvSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgev1sand(pars, yv));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgev2sand
+arma::mat tgev2sand(arma::vec pars, arma::vec yv);
+RcppExport SEXP _evgmrf_tgev2sand(SEXP parsSEXP, SEXP yvSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type yv(yvSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgev2sand(pars, yv));
+    return rcpp_result_gen;
+END_RCPP
+}
 // tgpdgmrfld0
-double tgpdgmrfld0(arma::mat pars, arma::field<arma::vec> yc);
-RcppExport SEXP _evgmrf_tgpdgmrfld0(SEXP parsSEXP, SEXP ycSEXP) {
+double tgpdgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc);
+RcppExport SEXP _evgmrf_tgpdgmrfld0(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
-    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld0(pars, yc));
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld0(pars, yc, wc));
     return rcpp_result_gen;
 END_RCPP
 }
 // tgpdgmrfld12
-arma::mat tgpdgmrfld12(arma::mat pars, arma::field<arma::vec> yc);
-RcppExport SEXP _evgmrf_tgpdgmrfld12(SEXP parsSEXP, SEXP ycSEXP) {
+arma::mat tgpdgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc);
+RcppExport SEXP _evgmrf_tgpdgmrfld12(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
-    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld12(pars, yc));
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld12(pars, yc, wc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgpdgmrfldJ
+arma::mat tgpdgmrfldJ(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc);
+RcppExport SEXP _evgmrf_tgpdgmrfldJ(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfldJ(pars, yc, wc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgpdgmrfld0_omp
+double tgpdgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+RcppExport SEXP _evgmrf_tgpdgmrfld0_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld0_omp(pars, yc, wc, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgpdgmrfld0_omp2
+double tgpdgmrfld0_omp2(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+RcppExport SEXP _evgmrf_tgpdgmrfld0_omp2(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld0_omp2(pars, yc, wc, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgpdgmrfld12_omp2
+arma::mat tgpdgmrfld12_omp2(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+RcppExport SEXP _evgmrf_tgpdgmrfld12_omp2(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld12_omp2(pars, yc, wc, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgpdgmrfld0_omp3
+double tgpdgmrfld0_omp3(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+RcppExport SEXP _evgmrf_tgpdgmrfld0_omp3(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld0_omp3(pars, yc, wc, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tgpdgmrfld12_omp
+arma::mat tgpdgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+RcppExport SEXP _evgmrf_tgpdgmrfld12_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tgpdgmrfld12_omp(pars, yc, wc, threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -274,52 +399,54 @@ BEGIN_RCPP
 END_RCPP
 }
 // tppugmrfld0
-double tppugmrfld0(arma::mat pars, arma::vec uv, double w);
-RcppExport SEXP _evgmrf_tppugmrfld0(SEXP parsSEXP, SEXP uvSEXP, SEXP wSEXP) {
+double tppugmrfld0(arma::mat pars, arma::vec uv, arma::vec wv);
+RcppExport SEXP _evgmrf_tppugmrfld0(SEXP parsSEXP, SEXP uvSEXP, SEXP wvSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type uv(uvSEXP);
-    Rcpp::traits::input_parameter< double >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(tppugmrfld0(pars, uv, w));
+    Rcpp::traits::input_parameter< arma::vec >::type wv(wvSEXP);
+    rcpp_result_gen = Rcpp::wrap(tppugmrfld0(pars, uv, wv));
     return rcpp_result_gen;
 END_RCPP
 }
 // tppugmrfld12
-arma::mat tppugmrfld12(arma::mat pars, arma::vec uv, double w);
-RcppExport SEXP _evgmrf_tppugmrfld12(SEXP parsSEXP, SEXP uvSEXP, SEXP wSEXP) {
+arma::mat tppugmrfld12(arma::mat pars, arma::vec uv, arma::vec wv);
+RcppExport SEXP _evgmrf_tppugmrfld12(SEXP parsSEXP, SEXP uvSEXP, SEXP wvSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type uv(uvSEXP);
-    Rcpp::traits::input_parameter< double >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(tppugmrfld12(pars, uv, w));
+    Rcpp::traits::input_parameter< arma::vec >::type wv(wvSEXP);
+    rcpp_result_gen = Rcpp::wrap(tppugmrfld12(pars, uv, wv));
     return rcpp_result_gen;
 END_RCPP
 }
 // tppzgmrfld0
-double tppzgmrfld0(arma::mat pars, arma::field<arma::vec> yc);
-RcppExport SEXP _evgmrf_tppzgmrfld0(SEXP parsSEXP, SEXP ycSEXP) {
+double tppzgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc);
+RcppExport SEXP _evgmrf_tppzgmrfld0(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
-    rcpp_result_gen = Rcpp::wrap(tppzgmrfld0(pars, yc));
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    rcpp_result_gen = Rcpp::wrap(tppzgmrfld0(pars, yc, wc));
     return rcpp_result_gen;
 END_RCPP
 }
 // tppzgmrfld12
-arma::mat tppzgmrfld12(arma::mat pars, arma::field<arma::vec> yc);
-RcppExport SEXP _evgmrf_tppzgmrfld12(SEXP parsSEXP, SEXP ycSEXP) {
+arma::mat tppzgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc);
+RcppExport SEXP _evgmrf_tppzgmrfld12(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
-    rcpp_result_gen = Rcpp::wrap(tppzgmrfld12(pars, yc));
+    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    rcpp_result_gen = Rcpp::wrap(tppzgmrfld12(pars, yc, wc));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -531,32 +658,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rlargecgmrfld0
-double rlargecgmrfld0(arma::mat pars, arma::field<arma::mat> yc, int drop);
-RcppExport SEXP _evgmrf_rlargecgmrfld0(SEXP parsSEXP, SEXP ycSEXP, SEXP dropSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type yc(ycSEXP);
-    Rcpp::traits::input_parameter< int >::type drop(dropSEXP);
-    rcpp_result_gen = Rcpp::wrap(rlargecgmrfld0(pars, yc, drop));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rlargecgmrfld12
-arma::mat rlargecgmrfld12(arma::mat pars, arma::field<arma::mat> yc, int drop);
-RcppExport SEXP _evgmrf_rlargecgmrfld12(SEXP parsSEXP, SEXP ycSEXP, SEXP dropSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type yc(ycSEXP);
-    Rcpp::traits::input_parameter< int >::type drop(dropSEXP);
-    rcpp_result_gen = Rcpp::wrap(rlargecgmrfld12(pars, yc, drop));
-    return rcpp_result_gen;
-END_RCPP
-}
 // chol_logdet_solve
 Rcpp::List chol_logdet_solve(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b);
 RcppExport SEXP _evgmrf_chol_logdet_solve(SEXP ASEXP, SEXP bSEXP) {
@@ -594,9 +695,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_evgmrf_aldgmrfld0", (DL_FUNC) &_evgmrf_aldgmrfld0, 4},
-    {"_evgmrf_aldgmrfld1", (DL_FUNC) &_evgmrf_aldgmrfld1, 4},
-    {"_evgmrf_aldgmrfld2", (DL_FUNC) &_evgmrf_aldgmrfld2, 4},
+    {"_evgmrf_aldgmrfld0", (DL_FUNC) &_evgmrf_aldgmrfld0, 5},
+    {"_evgmrf_aldgmrfld12", (DL_FUNC) &_evgmrf_aldgmrfld12, 5},
+    {"_evgmrf_aldgmrfldJ", (DL_FUNC) &_evgmrf_aldgmrfldJ, 5},
     {"_evgmrf_ald0", (DL_FUNC) &_evgmrf_ald0, 4},
     {"_evgmrf_ald1", (DL_FUNC) &_evgmrf_ald1, 4},
     {"_evgmrf_ald2", (DL_FUNC) &_evgmrf_ald2, 4},
@@ -604,20 +705,29 @@ static const R_CallMethodDef CallEntries[] = {
     {"_evgmrf_tgevgmrfld0", (DL_FUNC) &_evgmrf_tgevgmrfld0, 3},
     {"_evgmrf_tgevgmrfld12", (DL_FUNC) &_evgmrf_tgevgmrfld12, 3},
     {"_evgmrf_tgevgmrfldJ", (DL_FUNC) &_evgmrf_tgevgmrfldJ, 3},
+    {"_evgmrf_tgevgmrfldJarr", (DL_FUNC) &_evgmrf_tgevgmrfldJarr, 3},
     {"_evgmrf_tgevgmrfld0_omp", (DL_FUNC) &_evgmrf_tgevgmrfld0_omp, 4},
     {"_evgmrf_tgevgmrfld12_omp", (DL_FUNC) &_evgmrf_tgevgmrfld12_omp, 4},
     {"_evgmrf_tgev0", (DL_FUNC) &_evgmrf_tgev0, 3},
     {"_evgmrf_tgev1", (DL_FUNC) &_evgmrf_tgev1, 3},
     {"_evgmrf_tgev2", (DL_FUNC) &_evgmrf_tgev2, 3},
-    {"_evgmrf_tgpdgmrfld0", (DL_FUNC) &_evgmrf_tgpdgmrfld0, 2},
-    {"_evgmrf_tgpdgmrfld12", (DL_FUNC) &_evgmrf_tgpdgmrfld12, 2},
+    {"_evgmrf_tgev1sand", (DL_FUNC) &_evgmrf_tgev1sand, 2},
+    {"_evgmrf_tgev2sand", (DL_FUNC) &_evgmrf_tgev2sand, 2},
+    {"_evgmrf_tgpdgmrfld0", (DL_FUNC) &_evgmrf_tgpdgmrfld0, 3},
+    {"_evgmrf_tgpdgmrfld12", (DL_FUNC) &_evgmrf_tgpdgmrfld12, 3},
+    {"_evgmrf_tgpdgmrfldJ", (DL_FUNC) &_evgmrf_tgpdgmrfldJ, 3},
+    {"_evgmrf_tgpdgmrfld0_omp", (DL_FUNC) &_evgmrf_tgpdgmrfld0_omp, 4},
+    {"_evgmrf_tgpdgmrfld0_omp2", (DL_FUNC) &_evgmrf_tgpdgmrfld0_omp2, 4},
+    {"_evgmrf_tgpdgmrfld12_omp2", (DL_FUNC) &_evgmrf_tgpdgmrfld12_omp2, 4},
+    {"_evgmrf_tgpdgmrfld0_omp3", (DL_FUNC) &_evgmrf_tgpdgmrfld0_omp3, 4},
+    {"_evgmrf_tgpdgmrfld12_omp", (DL_FUNC) &_evgmrf_tgpdgmrfld12_omp, 4},
     {"_evgmrf_tgpd0", (DL_FUNC) &_evgmrf_tgpd0, 2},
     {"_evgmrf_tgpd1", (DL_FUNC) &_evgmrf_tgpd1, 2},
     {"_evgmrf_tgpd2", (DL_FUNC) &_evgmrf_tgpd2, 2},
     {"_evgmrf_tppugmrfld0", (DL_FUNC) &_evgmrf_tppugmrfld0, 3},
     {"_evgmrf_tppugmrfld12", (DL_FUNC) &_evgmrf_tppugmrfld12, 3},
-    {"_evgmrf_tppzgmrfld0", (DL_FUNC) &_evgmrf_tppzgmrfld0, 2},
-    {"_evgmrf_tppzgmrfld12", (DL_FUNC) &_evgmrf_tppzgmrfld12, 2},
+    {"_evgmrf_tppzgmrfld0", (DL_FUNC) &_evgmrf_tppzgmrfld0, 3},
+    {"_evgmrf_tppzgmrfld12", (DL_FUNC) &_evgmrf_tppzgmrfld12, 3},
     {"_evgmrf_tppu0", (DL_FUNC) &_evgmrf_tppu0, 3},
     {"_evgmrf_tppu1", (DL_FUNC) &_evgmrf_tppu1, 3},
     {"_evgmrf_tppu2", (DL_FUNC) &_evgmrf_tppu2, 3},
@@ -634,8 +744,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_evgmrf_rlarged0", (DL_FUNC) &_evgmrf_rlarged0, 2},
     {"_evgmrf_rlarged1", (DL_FUNC) &_evgmrf_rlarged1, 2},
     {"_evgmrf_rlarged2", (DL_FUNC) &_evgmrf_rlarged2, 2},
-    {"_evgmrf_rlargecgmrfld0", (DL_FUNC) &_evgmrf_rlargecgmrfld0, 3},
-    {"_evgmrf_rlargecgmrfld12", (DL_FUNC) &_evgmrf_rlargecgmrfld12, 3},
     {"_evgmrf_chol_logdet_solve", (DL_FUNC) &_evgmrf_chol_logdet_solve, 2},
     {"_evgmrf_chol_logdet", (DL_FUNC) &_evgmrf_chol_logdet, 1},
     {"_evgmrf_chol_solve_mat", (DL_FUNC) &_evgmrf_chol_solve_mat, 2},
