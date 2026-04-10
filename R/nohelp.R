@@ -1,3 +1,5 @@
+.args0 <- list(delta = .1, mult = 1, C = 1, tau = NULL, nper = 1)
+
 .checks <- function(model, order) {
   if (!.check_multiple(order, model))
     stop('length(order) not multiple of length(model) or vice-versa.')
@@ -24,19 +26,217 @@
 
 .control.evgmrf <- function() {
   list(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-3, reml_direction = 'ad-hoc',
-       reml_steptol = 1e-2, reml_stepmax = 1, reml_itlim = 1e2, inner_optim = 'chol',
-       alpha.tol = 1e-6, grad_mult = 0, par_mult = 1, super = TRUE, update = FALSE, 
-       openmp = TRUE, threads = 0, perturb.tol = 1e-2, perturb.mult = 5, 
+       reml_steptol = 5e-3, reml_stepmax = 1, reml_itlim = 1e2, inner_optim = 'chol',
+       alpha.tol = 1e-6, grad_mult = 0, par_mult = .1, super = TRUE, update = FALSE, 
+       openmp = FALSE, threads = 0, perturb.tol = 1e-2, perturb.mult = 5, 
        perturb.method = 'chol', perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10,
+       cv_eps = 5e-2, cv_gradtol = .05, cv_steptol = 1e-4,
        sandwich = FALSE)
 }
 
 ## REML functions
 
+.dst0 <- function(x, omega = 1, alpha = 0, nu = 10, log = FALSE) {
+  delta <- alpha / sqrt(1 + alpha^2)
+  b_nu <- sqrt(nu / pi) * gamma((nu - 1) / 2) / gamma(nu / 2)
+  xi <- -omega * b_nu * delta  # shift so mean = 0
+  sn::dst(x, xi = xi, omega = omega, alpha = alpha, nu = nu, log = log)
+}
+
+.dmixexp0 <- function(x, p = 0.5, rate = 1, log = FALSE) {
+  if (p < 0 || p > 1) stop("p must be between 0 and 1")
+  if (rate <= 0) stop("rate must be positive")
+  
+  dens <- numeric(length(x))
+  dens[x == 0] <- 1 - p
+  dens[x > 0] <- p * rate * exp(-rate * x[x > 0])
+  dens[x < 0] <- 0
+  
+  if (log) dens <- log(dens)
+  
+  return(dens)
+}
+
+.dmixexpnorm <- function(x, p = 0.5, rate = 1, sd = 1, log = FALSE) {
+  if (p < 0 || p > 1) stop("p must be between 0 and 1")
+  if (rate <= 0) stop("rate must be positive")
+  if (sd <= 0) stop("sd must be positive")
+  
+  # Exponential pdf (only for x >= 0)
+  f_exp <- ifelse(x >= 0, rate * exp(-rate * x), 0)
+  
+  # Normal pdf (symmetric, defined everywhere)
+  f_norm <- dnorm(x, mean = 0, sd = sd)
+  
+  # Mixture
+  dens <- p * f_exp + (1 - p) * f_norm
+  
+  if (log) dens <- log(dens)
+  return(dens)
+}
+
+.temp <- function(x, s = .1) {
+  ifelse (x <= 2 * s, 
+          dnorm(x, mean = 0, sd = s), 
+          (1 - pnorm(2)) * dunif(x, 2 * s, 4))
+}
+
+.temp <- function(x) exp(-1/x) / (x * x)
+
+.dtest <- function(x, p = 0.95, sd = 1, s = 1, log = FALSE) {
+  # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dbeta(x / 4, 1.1, 1.1)
+  # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dnorm(x, 2, 2)
+  # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dnorm(x, 0, 20)
+  # dens <- .temp(x, s)
+  # dens <- p * dnorm(x, mean = 0, sd = .1) + (1 - p) * dnorm(x, mean = 0, sd = .15)
+  dens <- dcauchy(x, location = 0, scale = .1)
+  # dens <- dnorm(x, mean = 0, sd = .1)
+  if (log) dens <- log(dens)
+  return(dens)
+}
+
+.d2unif <- function(x, p = 0.95, log = FALSE) {
+  dens <- p * dunif(x, -0.1, 0.1) + (1 - p) * dexp(x)
+  if (log) dens <- log(dens)
+  return(dens)
+}
+
+dstudent <- function(x, df, mean = 0, scale = 1, log = FALSE) {
+  z <- (x - mean) / scale
+  if (log)
+    dt(z, df, log = TRUE) - log(scale)
+  else
+    dt(z, df) / scale
+}
+
+dsech <- function(x, location = 0, scale = 1, log = FALSE) {
+  if (scale <= 0) stop("scale must be positive")
+  z <- (x - location) / scale
+  logdens <- -log(2 * scale) - log(cosh(pi * z / 2))
+  if (log) logdens else exp(logdens)
+}
+
+# Exponentially Modified Gaussian (EMG) PDF
+dEMG <- function(y, mu = 0, sigma = 1, lambda = 1, log = FALSE) {
+  u <- (mu + lambda * sigma^2 - y) / (sqrt(2) * sigma)
+  
+  # Compute log density for numerical stability
+  log_pdf <- log(lambda) - log(2) +
+    .5 * lambda * (2 * mu + lambda * sigma^2 - 2 * y) + pnorm(-u * sqrt(2), log = TRUE)
+    # log(pnorm(-u * sqrt(2)))  # since erfc(x) = 2 * pnorm(-x * sqrt(2))
+
+  if (log) return(log_pdf)
+  else return(exp(log_pdf))
+}
+
+# Function to calculate the PDF of the Normal Inverse Gaussian distribution
+# Parameters:
+# x: Vector of quantiles.
+# alpha: Tail heaviness parameter.
+# beta: Skewness parameter.
+# delta: Scale parameter.
+# mu: Location parameter.
+# log: Logical; if TRUE, log-density is returned.
+
+dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
+  
+  # Ensure constraints are met (alpha > 0, delta > 0, |beta| < alpha)
+  if (alpha <= 0 || delta <= 0 || any(abs(beta) >= alpha)) {
+    stop("Parameters must satisfy: alpha > 0, delta > 0, and |beta| < alpha.")
+  }
+  
+  # Pre-calculate common terms
+  gamma <- sqrt(alpha^2 - beta^2)
+  z <- x - mu
+  
+  # Calculate K_1 (Modified Bessel function of the third kind, order 1)
+  # R uses 'besselK(x, nu)' where nu is the order.
+  bessel_term <- besselK(alpha * sqrt(delta^2 + z^2), 1)
+  
+  # Calculate the NIG density f(x)
+  # The formula is: f(x) = (alpha * delta / pi) * K_1(alpha * sqrt(delta^2 + z^2)) * #                     * exp(delta * gamma + beta * z) / sqrt(delta^2 + z^2)
+  
+  # Term 1: The constant part
+  constant_term <- (alpha * delta / pi) * exp(delta * gamma)
+  
+  # Term 2: The variable part
+  variable_term <- bessel_term * exp(beta * z) / sqrt(delta^2 + z^2)
+  
+  # Full density
+  density <- constant_term * variable_term
+  
+  # Handle log argument
+  if (log) {
+    return(log(density))
+  } else {
+    return(density)
+  }
+}
+
+.nldfrech <- function(x, s = 1, lambda = 1) {
+  # x <- abs(x)
+  # return(-dexp(x, rate = 1 / s, log = TRUE))
+  # return(-dnorm(x, 0, s, log = TRUE))
+  # return(-dcauchy(x, 0, s, log = TRUE))
+  # return(-sn::dst(x,  xi = 0, omega = 1, alpha = 5, nu = 5, log = TRUE))
+  # return(-.dst0(x, omega = s, alpha = 5, nu = 5, log = TRUE))
+  # return(-.dmixexpnorm(x, p = 0.5, rate = s, sd = .01, log = TRUE))
+  alpha <- 100
+  beta <- sqrt(alpha^2 - 1)
+  mu <- -s#- s * beta / sqrt(alpha * alpha - beta * beta)
+  return(-log(dnig(x, alpha, beta, s, mu)))
+  return(-log(.9 * dnorm(x, 0, s) * .1 * dgamma(x, shape = 2)))
+  return(-dEMG(x, 0, s, lambda, log = TRUE))
+  return(-dsech(x, 0, .5, log = TRUE))
+  return(-dstudent(x, 1, 0, .5, log = TRUE))
+  return(-dlogis(x, 0, .5, log = TRUE))
+  return(-dnorm(x, 0, .5, log = TRUE))
+  return(-dcauchy(x, scale = .1, log = TRUE))
+  return(-.dtest(x, s = s, log = TRUE))
+  # return(-.d2unif(x, log = TRUE))
+  out <- log(s) - log(alpha)
+  x <- (x - m) / s
+  out + (1 + alpha) * log(x) + x^(-alpha)
+}
+
+.pend012 <- function(pars, s = .1, lambda = 1, deriv = 0, eps = 1e-4) {
+  out <- list()
+  f0 <- .nldfrech(pars, s, lambda)
+  out[[1]] <- sum(f0)
+  if (deriv == 0)
+    return(out[[1]])
+  ph <- pars + eps
+  pl <- pars - eps
+  fh <- .nldfrech(ph, s, lambda)
+  fl <- .nldfrech(pl, s, lambda)
+  out[[2]] <- .5 * (fh - fl) / eps
+  out[[3]] <- (fh + fl - 2 * f0) / (eps^2)
+  out
+}
+
 .d0_Q <- function(pars, likdata, likfns, Q) {
   pl <- split(pars, likdata$psplit)
   pm <- t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
+  # browser()
+  # n_test <- ncol(pm)
+  # pm2 <- pm[, 1:n_test]
+  # likdata2 <- likdata
+  # likdata2$z <- likdata2$z[1:n_test]
+  # g1 <- numDeriv::grad(function(x) likfns$d0(matrix(x, 3), likdata2), pm2)
+  # g2 <- likfns$d12(pm2, likdata2)[[1]]
+  # H1 <- numDeriv::hessian(function(x) likfns$d0(matrix(x, 3), likdata2), pm2)
+  # H2 <- likfns$d12(pm2, likdata2)[[2]]
+  # g1 <- likfns$d1(as.matrix(pm2), likdata2)
+  # numDeriv::hessian(function(x) likfns$d0(matrix(x, 3), likdata2), pm2)[1:3, 1:3]
+  # matrix(likfns$d12(as.matrix(pm2), likdata2)[[2]][1, c(1, 2, 3, 2, 4, 5, 3, 5, 6)], 3, 3)
   out <- likdata$mult * likfns$d0(as.matrix(pm), likdata)
+  # maybe reinstate this with model = bym4 identifier
+  if (likdata$bym4) {
+  if (any(unlist(likdata$id_bym2))) {
+    temp <- exp(unlist(attr(Q, 'pars')))
+    out <- out + .pend012(pars[unlist(likdata$id_bym2)], s = temp[2])
+  }
+  }
   out <- out + .5 * crossprod(pars, Q %*% pars)[1, 1]
   if (!is.finite(out))
     out <- 1e20
@@ -102,6 +302,8 @@
 
 
 .d12_Q <- function(pars, likdata, likfns, Q) {
+  if (any(!is.finite(pars)))
+    browser()
   pl <- split(pars, likdata$psplit)
   pm <- t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
   gH <- likfns$d12(pm, likdata)
@@ -117,13 +319,21 @@
   H <- Matrix::sparseMatrix(r2, c2, x = as.vector(t(H)), symmetric = TRUE)
   H <- likdata$mult * crossprod(likdata$X, H %*% likdata$X)
   out$H <- H + Q
+  if (likdata$bym4) {
+  if (any(unlist(likdata$id_bym2))) {
+    temp <- exp(unlist(attr(Q, 'pars')))
+    temp <- .pend012(pars[unlist(likdata$id_bym2)], s = temp[2], deriv = 2)
+    # temp <- .pend012(pars[unlist(likdata$id_bym2)], s = attr(Q, 'test'), deriv = 2)
+    id <- unlist(likdata$id_bym2)
+    g0 <- H0 <- numeric(length(out$g))
+    g0[id] <- temp[[2]]
+    out$g <- out$g + g0
+    H0[id] <- temp[[3]]
+    H0 <- Matrix::Diagonal(n = length(H0), x = H0)
+    out$H <- out$H + H0
+  }
+  }
   out
-}
-
-.J_Q <- function(pars, likdata, likfns, Q) {
-  pl <- split(pars, likdata$psplit)
-  pm <- t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
-  likfns$J(pm, likdata)
 }
 
 # # A should be a symmetric sparse matrix, e.g., class "dgCMatrix"
@@ -313,6 +523,8 @@
   ldet <- ldet  - 2 * sum(log(Matrix::diag(D)))
   attr(H, 'ldet') <- ldet
   attr(gH$g, 'ldet') <- ldet
+  if (any(!is.finite(gH$g)))
+    stop('Non-finite gradient')
   attr(stp, 'gradient') <- gH$g
   attr(stp, 'H0') <- gH$H
   attr(stp, 'cholprecondHessian') <- cholH
