@@ -1,6 +1,6 @@
 ## GEV functions
 
-.quick_tgev <- function(y, delta) {
+.quick_tgev <- function(y, delta = 0, hessian = FALSE) {
   y <- unlist(y)
   y_NA <- is.na(y)
   if (all(y_NA))
@@ -9,7 +9,10 @@
   psi0 <- sqrt(6 * var(y, na.rm = TRUE)) / pi
   mu0 <- mean(y, na.rm = TRUE) - 0.57722 * psi0
   inits <- c(mu0, log(psi0), -log(.36))
-  nlminb(inits, .tgev0, .tgev1, .tgev2, yv = y, delta = delta)$par
+  out <- nlminb(inits, .tgev0, .tgev1, .tgev2, yv = y, delta = delta)$par
+  if (hessian)
+    attr(out, 'hessian') <- .tgev2(out, y, delta)
+  out
 }
 
 .d0_gev <- function(pars_mat, likdata) {
@@ -17,7 +20,13 @@
     out <- .tgevgmrfld0_omp(pars_mat, likdata$z, likdata$w, likdata$threads)
   } else {
     out <- .tgevgmrfld0(pars_mat, likdata$z, likdata$w)
-  } 
+  }
+  # n_test <- 20
+  # id_test <- as.integer(matrix(1:length(pars_mat), length(likdata$z))[1:n_test, , drop = FALSE])
+  # g1 <- numDeriv::grad(function(x) .tgevgmrfld0(matrix(x, 3), likdata$z[1:n_test], likdata$w[1:n_test]), as.vector(pars_mat[, 1:n_test]))
+  # g2 <- t(.tgevgmrfld12(pars_mat[, 1:n_test], likdata$z[1:n_test], likdata$w[1:n_test])[, 1:3])
+  # plot(g1, g2)
+  # browser()
   out
 }  
 # 
@@ -40,16 +49,19 @@
 }
 
 .J_gev <- function(pars_mat, likdata) {
-.tgevgmrfldJ(pars_mat, likdata$z, likdata$w)
+  .tgevgmrfldJ(pars_mat, likdata$z, likdata$w)
 }
 
+.G_gev <- function(pars_mat, likdata) {
+  .tgevgmrfldJarr(pars_mat, likdata$z, likdata$w)
+}
 # 
 # .d2_gevmat <- function(pars_mat, likdata) {
 #   .tgevgmrfld2mat(pars_mat, likdata$z, likdata$w)
 # }
 
 # .gev_fns <- list(d0 = .d0_gev, d1 = .d1_gev, d2 = .d2_gev, d12 = .d12_gev)
-.gev_fns <- list(d0 = .d0_gev, d12 = .d12_gev, J = .J_gev)
+.gev_fns <- list(d0 = .d0_gev, d12 = .d12_gev, J = .J_gev, G = .G_gev)
 .gev_fns$trans <- list(function(x) x, function(x) exp(x), function(x) 1.5 / (1 + exp(-x)) - 1)
 
 attr(.gev_fns$trans, 'deriv') <- list(function(x) 1 + 0 * x, 
