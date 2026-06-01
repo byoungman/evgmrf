@@ -222,10 +222,12 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   if (family == 'rlarge') {
     # if (is.null(args$drop)) {
       .lf <- .rlarge_fns
-      p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))), args$delta)
+      # p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))), args$delta)
+      p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x))), args$delta)
       p0m <- t(matrix(p0m1, 3, n))
     if (inits == 'different') {
-      p0m <- t(sapply(lapply(zl, function(x) x[, 1]), .quick_tgev_shrink, delta = args$delta, pars0 = p0m1, mult = args$mult))
+      # p0m <- t(sapply(lapply(zl, function(x) x[, 1]), .quick_tgev_shrink, delta = args$delta, pars0 = p0m1, mult = args$mult))
+      p0m <- t(sapply(lapply(zl, function(x) x), .quick_tgev_shrink, delta = args$delta, pars0 = p0m1, mult = args$mult))
       set_to_mean <- is.na(p0m[, 1])
       if (any(set_to_mean)) {
         infill <- matrix(.quick_tgev(unlist(lapply(zl, function(x) x[, 1])), delta = args$delta), sum(set_to_mean), 3, byrow = TRUE)

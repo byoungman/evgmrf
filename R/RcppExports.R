@@ -186,6 +186,14 @@
     .Call(`_evgmrf_rlargegmrfld12`, pars, yc, wc)
 }
 
+.rlargegmrfld0_omp <- function(pars, yc, wc, threads = 0L) {
+    .Call(`_evgmrf_rlargegmrfld0_omp`, pars, yc, wc, threads)
+}
+
+.rlargegmrfld12_omp <- function(pars, yc, wc, threads = 0L) {
+    .Call(`_evgmrf_rlargegmrfld12_omp`, pars, yc, wc, threads)
+}
+
 .rlarged0 <- function(pars, yv) {
     .Call(`_evgmrf_rlarged0`, pars, yv)
 }

@@ -23,7 +23,7 @@
 .d0_rlarge <- function(pars_mat, likdata) {
   # rlargegmrfld0(pars_mat, likdata$z_cube)
   if (likdata$openmp) {
-    out <- .rlargegmrfld0(pars_mat, likdata$z, likdata$w)
+    out <- .rlargegmrfld0_omp(pars_mat, likdata$z, likdata$w, likdata$threads)
   } else {
     out <- .rlargegmrfld0(pars_mat, likdata$z, likdata$w)
   }
@@ -68,7 +68,7 @@
 .d12_rlarge <- function(pars_mat, likdata) {
   # gH <- rlargegmrfld12(pars_mat, likdata$z_cube)
   if (likdata$openmp) {
-    gH <- .rlargegmrfld12(pars_mat, likdata$z, likdata$w)
+    gH <- .rlargegmrfld12_omp(pars_mat, likdata$z, likdata$w, likdata$threads)
   } else {
     gH <- .rlargegmrfld12(pars_mat, likdata$z, likdata$w)
   }

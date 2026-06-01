@@ -9,10 +9,15 @@
 }
 
 .make_D1 <- function(n) {
-  i <- 1:(n - 1)
-  j <- c(1:(n - 1), 2:n)
-  x <- c(rep(-1, n - 1), rep(1, n - 1))
-  Matrix::sparseMatrix(i = rep(i, 2), j = j, x = x, dims = c(n - 1, n))
+  if (n == 1) {
+    out <- Matrix::sparseMatrix(i = 1, j = 1, x = 1, dims = c(1, 1))
+  } else {
+    i <- 1:(n - 1)
+    j <- c(1:(n - 1), 2:n)
+    x <- c(rep(-1, n - 1), rep(1, n - 1))
+    out <- Matrix::sparseMatrix(i = rep(i, 2), j = j, x = x, dims = c(n - 1, n))
+  }
+  out
 }
 
 .make_D2 <- function(n) {
@@ -31,20 +36,60 @@
 
 .make_Q <- function(nx, ny, order) {
   if (order == 1) {
-    Dx <- .make_D1(nx)
-    Dy <- .make_D1(ny)
+    if (nx > 1)
+      Dx <- .make_D1(nx)
+    if (ny > 1)
+      Dy <- .make_D1(ny)
+    if (nx > 1) {
+      Qx <- Matrix::kronecker(Matrix::Diagonal(ny), Matrix::crossprod(Dx))
+      if (ny > 1) {
+        Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+        out <- as(Qx + Qy, "generalMatrix")
+      } else {
+        out <- as(Qx, "generalMatrix")
+      }
+    } else {
+      Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+      out <- as(Qy, "generalMatrix")
+    }  
   }
   if (order == 2) {
-    Dx <- .make_D2(nx)
-    Dy <- .make_D2(ny)
+    if (nx > 2)
+      Dx <- .make_D2(nx)
+    if (ny > 2)
+      Dy <- .make_D2(ny)
+    if (nx > 2) {
+      Qx <- Matrix::kronecker(Matrix::Diagonal(ny), Matrix::crossprod(Dx))
+      if (ny > 2) {
+        Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+        out <- as(Qx + Qy, "generalMatrix")
+      } else {
+        out <- as(Qx, "generalMatrix")
+      }
+    } else {
+      Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+      out <- as(Qy, "generalMatrix")
+    }  
   }
   if (order == 3) {
-    Dx <- .make_D3(nx)
-    Dy <- .make_D3(ny)
+    if (nx > 3)
+      Dx <- .make_D3(nx)
+    if (ny > 3)
+      Dy <- .make_D3(ny)
+    if (nx > 3) {
+      Qx <- Matrix::kronecker(Matrix::Diagonal(ny), Matrix::crossprod(Dx))
+      if (ny > 3) {
+        Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+        out <- as(Qx + Qy, "generalMatrix")
+      } else {
+        out <- as(Qx, "generalMatrix")
+      }
+    } else {
+      Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+      out <- as(Qy, "generalMatrix")
+    }  
   }
-  Qx <- Matrix::kronecker(Matrix::Diagonal(ny), Matrix::crossprod(Dx))
-  Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
-  as(Qx + Qy, "generalMatrix")
+  out
 }
 
 .makeQ_data <- function(nx, ny, model, order, n_null, W = NULL) {

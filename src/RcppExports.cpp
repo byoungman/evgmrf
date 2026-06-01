@@ -622,6 +622,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rlargegmrfld0_omp
+double rlargegmrfld0_omp(arma::mat pars, arma::field<arma::mat> yc, arma::field<arma::mat> wc, int threads);
+RcppExport SEXP _evgmrf_rlargegmrfld0_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rlargegmrfld0_omp(pars, yc, wc, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rlargegmrfld12_omp
+arma::mat rlargegmrfld12_omp(arma::mat pars, arma::field<arma::mat> yc, arma::field<arma::mat> wc, int threads);
+RcppExport SEXP _evgmrf_rlargegmrfld12_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rlargegmrfld12_omp(pars, yc, wc, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rlarged0
 double rlarged0(arma::vec pars, arma::mat yv);
 RcppExport SEXP _evgmrf_rlarged0(SEXP parsSEXP, SEXP yvSEXP) {
@@ -741,6 +769,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_evgmrf_tpprocgmrfld12", (DL_FUNC) &_evgmrf_tpprocgmrfld12, 3},
     {"_evgmrf_rlargegmrfld0", (DL_FUNC) &_evgmrf_rlargegmrfld0, 3},
     {"_evgmrf_rlargegmrfld12", (DL_FUNC) &_evgmrf_rlargegmrfld12, 3},
+    {"_evgmrf_rlargegmrfld0_omp", (DL_FUNC) &_evgmrf_rlargegmrfld0_omp, 4},
+    {"_evgmrf_rlargegmrfld12_omp", (DL_FUNC) &_evgmrf_rlargegmrfld12_omp, 4},
     {"_evgmrf_rlarged0", (DL_FUNC) &_evgmrf_rlarged0, 2},
     {"_evgmrf_rlarged1", (DL_FUNC) &_evgmrf_rlarged1, 2},
     {"_evgmrf_rlarged2", (DL_FUNC) &_evgmrf_rlarged2, 2},
