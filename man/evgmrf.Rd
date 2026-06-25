@@ -30,7 +30,8 @@ evgmrf(
   infill = FALSE,
   cv = FALSE,
   inits.method = "reml",
-  auto.weights = FALSE
+  auto.weights = FALSE,
+  bymfns = NULL
 )
 }
 \arguments{

@@ -63,7 +63,8 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
                    nx = NULL, ny = NULL, index = NULL, infill = FALSE,
                    cv = FALSE, 
                    inits.method = 'reml',
-                   auto.weights = FALSE
+                   auto.weights = FALSE,
+                   bymfns = NULL
 ) {
   model <- tolower(model)
   args <- replace(.args0, names(args), args)
@@ -151,6 +152,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
     # zl <- mapply(function(x, y) x[x > y], zl, u)
   }
   .ld <- list(n = n, z = zl, w = wl, mult = 1 / gamma, args = args, bym4 = FALSE)
+  .ld$bymfns <- bymfns
   # .ld$z_cube <- array(unlist(.ld$z), c(dim(.ld$z[[1]])[1:2], length(.ld$z)))
   if (family == 'gpd') {
     .lf <- .gpd_fns
@@ -312,6 +314,8 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
     }
     p0l[[i]] <- b0
   }
+  if (!is.null(bymfns))
+    model[!sapply(bymfns, is.null) & is.na(model)] <- 'bym4'
   id_bym2 <- lapply(p0l, function(x) rep(FALSE, length(x)))
   for (i in which(gmrf)) {
     p0l[[i]] <- c(p0l[[i]], p0m[, i])
@@ -327,7 +331,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
     if (nrow(W) != nrow(p0m)) 
       stop(paste('Supplied W dimension not compatible with data size:', nrow(W), '!=', nrow(p0m)))
   }
-  Qd0 <- .makeQ_data(nx, ny, model, order, alpha, nX1, W)
+  Qd0 <- .makeQ_data(nx, ny, model, order, alpha, nX1, W, bymfns)
   .ld$Xl <- X1
   for (i in which(gmrf)) {
     .ld$Xl[[i]] <- list(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
@@ -335,7 +339,11 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
       .ld$Xl[[i]] <- c(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
   }
   .ld$Xlc <- .ld$Xl # componentwise
-  .ld$Xl <- lapply(seq_along(.ld$Xl), function(i) do.call(cbind, .ld$Xl[[i]]))
+  for (i in seq_along(.ld$Xl)) {
+    if (is.list(.ld$Xl[[i]])) 
+      .ld$Xl[[i]] <- do.call(cbind, .ld$Xl[[i]])
+  }
+  # .ld$Xl <- lapply(seq_along(.ld$Xl), function(i) do.call(cbind, .ld$Xl[[i]]))
   Qd0$R <- list()
   for (i in which(gmrf))
     Qd0$R[[i]] <- Matrix::qrR(Matrix::qr(rbind(.ld$Xl[[i]], .ld$Xl[[i]])))
@@ -348,7 +356,9 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   # rho0_temp <- as.vector(unlist(lapply(model, .inits_model)))
   # par_var <- -log(20 * apply(p0m, 2, var))
   par_var <- log(apply(p0m, 2, sd))
-  lambda0_temp <- unlist(mapply(.inits_model, model, order, alpha, par_var, USE.NAMES = FALSE, SIMPLIFY = FALSE))
+  if(is.null(bymfns)) 
+    bymfns <- lapply(seq_along(model), function(.) NULL)
+  lambda0_temp <- unlist(mapply(.inits_model, model, order, alpha, par_var, bymfns, USE.NAMES = FALSE, SIMPLIFY = FALSE))
   if (missing(lambda0)) {
     lambda0 <- lambda0_temp
   } else {
@@ -439,14 +449,19 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
     ny <- max(index[, 2])
     holes <- nrow(index) < nx * ny
   }
-  if (control$inner_optim != 'Cholesky')
-    out$cholprecondHessian <- Matrix::Cholesky(out$precondHessian, super = control$super, LDL = FALSE)
+  if (control$inner_optim != 'Cholesky') {
+    out$cholprecondHessian <- suppressWarnings(try(Matrix::Cholesky(out$precondHessian, super = control$super, LDL = FALSE), silent = TRUE))
+    if (inherits(out$cholprecondHessian, 'try-error')) {
+      out$precondHessian <- .perturb_super(out$precondHessian)
+      out$cholprecondHessian <- Matrix::Cholesky(out$precondHessian, LDL = FALSE)
+    }
+  }
   out$X <- .ld$Xl
   out$holes <- holes
   out$nx <- nx
   out$ny <- ny
   out$n <- .ld$n
-  out$np <- .ld$np
+  out$np <- .ld$np0
   out$unlink <- .lf$trans
   out$names <- .lf$names
   out$quantile <- .lf$quantile
@@ -470,4 +485,6 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   class(out) <- 'evgmrf'
   out
 }
+
+
 

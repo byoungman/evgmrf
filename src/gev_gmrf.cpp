@@ -343,8 +343,169 @@ arma::cube tgevgmrfldJarr(arma::mat pars, arma::field<arma::vec> yc, arma::field
   
 }
 
+// // [[Rcpp::export(.tgevgmrfld0_omp)]]
+// double tgevgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads = 0)
+// {
+//   
+//   int n = yc.n_rows; // number of locations
+//   
+//   // Set up OpenMP threads
+// #ifdef _OPENMP
+//   if (threads == 0) {
+//     threads = omp_get_max_threads();
+//   }
+//   omp_set_num_threads(threads);
+// #endif
+//   
+//   // Vector to store local results from each thread
+//   std::vector<double> partial_nllh(threads, 0.0);
+//   double nllh = 0.0;
+//   bool invalid = false;
+//   
+// #pragma omp parallel shared(invalid)
+// {
+//   int thread_id = 0;
+// #ifdef _OPENMP
+//   thread_id = omp_get_thread_num();
+// #endif
+//   
+//   double local_nllh = 0.0;
+//   int m;
+//   double y, w, mu, lpsi, txi, xi;
+//   double ee1, ee2;
+//   arma::vec yv, wv;
+//   
+//   // Use static scheduling to ensure deterministic order
+// #pragma omp for schedule(static) ordered
+//   for (int i=0; i < n; i++) {
+//     
+// #pragma omp ordered
+// {
+//   // Only process if no invalid condition has been found yet
+//   if (!invalid) {
+//     
+//     mu = pars(0, i);
+//     lpsi = pars(1, i);
+//     txi = pars(2, i);
+//     xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
+//     
+//     m = yc(i).size(); // number of obs
+//     yv = yc(i);
+//     wv = wc(i);
+//     
+//     for (int k=0; k < m; k++) {
+//       
+//       y = yv(k);
+//       w = wv(k);
+//       
+//       if(std::isfinite(y)) {
+//         
+//         ee1 = xi * (y - mu) / exp(lpsi);
+//         
+//         if (ee1 <= -1.0) {
+//           invalid = true;
+//           break; // Can break here since we're in ordered section
+//         } else {
+//           
+//           ee2 = 1.0 / xi;
+//           local_nllh += w * (lpsi + (ee2 + 1.0) * log1p(ee1) + R_pow(1.0 + ee1, -ee2));
+//           
+//         }
+//         
+//       }
+//       
+//     }
+//     
+//   }
+// }
+//   }
+//   
+//   partial_nllh[thread_id] = local_nllh;
+// }
+// 
+// // Check if we encountered an invalid situation
+// if (invalid) {
+//   return 1e20;
+// }
+// 
+// // Sum up results from all threads
+// for (int t = 0; t < threads; t++) {
+//   nllh += partial_nllh[t];
+// }
+// 
+// return nllh;
+// }
+
+// // [[Rcpp::export(.tgevgmrfld0_omp)]]
+// double tgevgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads = 0)
+// {
+//   
+//   int n = yc.n_rows; // number of locations
+//   
+//   // Set up OpenMP threads
+// #ifdef _OPENMP
+//   if (threads == 0) {
+//     threads = omp_get_max_threads();
+//   }
+//   omp_set_num_threads(threads);
+// #endif
+//   
+//   arma::vec nllh(n, arma::fill::zeros);
+// 
+// #pragma omp parallel
+// {
+// 
+//   int m;
+//   double y, w, mu, lpsi, txi, xi;
+//   double ee1, ee2;
+//   arma::vec yv, wv;
+//   
+//   // Use static scheduling to ensure deterministic order
+// #pragma omp for
+//   for (int i=0; i < n; i++) {
+//     
+//     mu = pars(0, i);
+//     lpsi = pars(1, i);
+//     txi = pars(2, i);
+//     xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
+//     
+//     m = yc(i).size(); // number of obs
+//     yv = yc(i);
+//     wv = wc(i);
+//     
+//     for (int k=0; k < m; k++) {
+//       
+//       y = yv(k);
+//       w = wv(k);
+//       
+//       if (std::isfinite(y)) {
+//         
+//         ee1 = xi * (y - mu) / exp(lpsi);
+//         
+//         if (ee1 <= -1.0) {
+//           
+//           nllh(i) += 1e20;
+// 
+//         } else {
+//         
+//           ee2 = 1.0 / xi;
+//           nllh(i) += w * (lpsi + (ee2 + 1.0) * log1p(ee1) + R_pow(1.0 + ee1, -ee2));
+// 
+//       }
+//       
+//     }
+//     
+//   }
+// }
+// }
+// 
+// double out = sum(nllh);
+// 
+// return out;
+// }
+
 // [[Rcpp::export(.tgevgmrfld0_omp)]]
-double tgevgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads = 0)
+double tgevgmrfld0_omp(const arma::mat& pars, const arma::field<arma::vec>& yc, const arma::field<arma::vec>& wc, int threads = 0)
 {
   
   int n = yc.n_rows; // number of locations
@@ -357,87 +518,62 @@ double tgevgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<ar
   omp_set_num_threads(threads);
 #endif
   
-  // Vector to store local results from each thread
-  std::vector<double> partial_nllh(threads, 0.0);
   double nllh = 0.0;
-  bool invalid = false;
   
-#pragma omp parallel shared(invalid)
+#pragma omp parallel reduction(+:nllh)
 {
-  int thread_id = 0;
-#ifdef _OPENMP
-  thread_id = omp_get_thread_num();
-#endif
   
-  double local_nllh = 0.0;
-  int m;
-  double y, w, mu, lpsi, txi, xi;
+  double y, w, mu, lpsi, txi, xi, psi;
   double ee1, ee2;
-  arma::vec yv, wv;
-  
+
   // Use static scheduling to ensure deterministic order
-#pragma omp for schedule(static) ordered
+#pragma omp for schedule(static)
   for (int i=0; i < n; i++) {
-    
-#pragma omp ordered
-{
-  // Only process if no invalid condition has been found yet
-  if (!invalid) {
     
     mu = pars(0, i);
     lpsi = pars(1, i);
+    psi = std::exp(lpsi);
     txi = pars(2, i);
-    xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
+    xi = 1.5 / (1.0 + std::exp(-txi)) - 1.0;
+    ee2 = 1.0 / xi;
     
-    m = yc(i).size(); // number of obs
-    yv = yc(i);
-    wv = wc(i);
+    const arma::vec& yv = yc(i);
+    const arma::vec& wv = wc(i);
+    int m = yv.n_elem; // number of obs
     
+    double local_nllh = 0.0;
+  
     for (int k=0; k < m; k++) {
       
-      y = yv(k);
-      w = wv(k);
+      y = yv[k];
+      w = wv[k];
       
-      if(std::isfinite(y)) {
+      if (std::isfinite(y)) {
         
-        ee1 = xi * (y - mu) / exp(lpsi);
+        ee1 = xi * (y - mu) / psi;
         
         if (ee1 <= -1.0) {
-          invalid = true;
-          break; // Can break here since we're in ordered section
+          
+          local_nllh += 1e20;
+          
         } else {
           
-          ee2 = 1.0 / xi;
-          local_nllh += w * (lpsi + (ee2 + 1.0) * log1p(ee1) + R_pow(1.0 + ee1, -ee2));
+          local_nllh += w * (lpsi + (ee2 + 1.0) * std::log1p(ee1) + std::pow(1.0 + ee1, -ee2));
           
         }
         
       }
       
     }
-    
+    nllh += local_nllh;
   }
-}
-  }
-  
-  partial_nllh[thread_id] = local_nllh;
-}
-
-// Check if we encountered an invalid situation
-if (invalid) {
-  return 1e20;
-}
-
-// Sum up results from all threads
-for (int t = 0; t < threads; t++) {
-  nllh += partial_nllh[t];
 }
 
 return nllh;
 }
 
 // [[Rcpp::export(.tgevgmrfld12_omp)]]
-arma::mat tgevgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads = 0)
+arma::mat tgevgmrfld12_omp(const arma::mat& pars, const arma::field<arma::vec>& yc, const arma::field<arma::vec>& wc, int threads = 0)
 {
   
   int n = yc.n_rows; // number of locations
@@ -452,55 +588,32 @@ arma::mat tgevgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::fiel
   
   arma::mat out = arma::mat(n, 9, arma::fill::zeros);
   
-  // Create thread-local matrices that will be combined later
-  std::vector<arma::mat> thread_outputs;
-  
-#ifdef _OPENMP
-  thread_outputs.resize(threads, arma::mat(n, 9, arma::fill::zeros));
-#else
-  thread_outputs.resize(1, arma::mat(n, 9, arma::fill::zeros));
-#endif
-  
-  // Add early termination flag for consistency
-  bool invalid = false;
-  
-#pragma omp parallel shared(invalid)
+#pragma omp parallel
 {
-  int thread_id = 0;
-#ifdef _OPENMP
-  thread_id = omp_get_thread_num();
-#endif
   
-  arma::mat& local_out = thread_outputs[thread_id];
-  int m;
   double y, w, mu, lpsi, txi, xi;
+  
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
   double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
   double ee30, ee31, ee33, ee34;
-  arma::vec yv, wv;
   
   // Use static scheduling to ensure deterministic order
-#pragma omp for schedule(static) ordered
+#pragma omp for schedule(static)
   for (int j=0; j < n; j++) {
-    
-#pragma omp ordered
-{
-  // Only process if no invalid condition has been found yet
-  if (!invalid) {
     
     mu = pars(0, j);
     lpsi = pars(1, j);
     txi = pars(2, j);
     
-    m = yc(j).size(); // number of obs
-    yv = yc(j);
-    wv = wc(j);
+    const arma::vec& yv = yc(j);
+    const arma::vec& wv = wc(j);
+    int m = yv.n_elem; // number of obs
     
     for (int k=0; k < m; k++) {
       
-      y = yv(k);
-      w = wv(k);
+      y = yv[k];
+      w = wv[k];
       
       if(std::isfinite(y)) {
         
@@ -512,54 +625,45 @@ arma::mat tgevgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::fiel
         ee7 = y - mu;
         ee9 = ee5 * ee7/ee6;
         ee10 = ee9 + 1;
+        ee11 = 1/ee5;
+        ee12 = R_pow(ee10, ee11);
+        ee13 = 1 + ee11;
+        ee14 = ee10 * ee6;
+        ee15 = R_pow(ee3, 2);
+        ee16 = log1p(ee9);
+        ee17 = 1/ee12;
+        ee18 = R_pow(ee10, ee13);
+        ee20 = ee3 * ee5;
+        ee21 = 1 + ee17;
+        ee22 = 1.5 * (ee16/(ee12 * ee5));
+        ee23 = 1.5/ee12;
+        ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
+        ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
+        ee28 = ee13 * ee5;
+        ee29 = ee13 * ee7;
+        ee30 = ee15 * ee6;
+        ee31 = R_pow(ee5, 2);
+        ee33 = 1.5 * (ee7/(ee18 * ee6));
+        ee34 = ee4 - ee21;
         
-        // Check for invalid condition (same as in tgevgmrfld0_omp)
-        if (ee5 * (y - mu) / ee6 <= -1.0) {
-          invalid = true;
-          break; // Can break here since we're in ordered section
-        } else {
-          
-          ee11 = 1/ee5;
-          ee12 = R_pow(ee10, ee11);
-          ee13 = 1 + ee11;
-          ee14 = ee10 * ee6;
-          ee15 = R_pow(ee3, 2);
-          ee16 = log1p(ee9);
-          ee17 = 1/ee12;
-          ee18 = R_pow(ee10, ee13);
-          ee20 = ee3 * ee5;
-          ee21 = 1 + ee17;
-          ee22 = 1.5 * (ee16/(ee12 * ee5));
-          ee23 = 1.5/ee12;
-          ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
-          ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
-          ee28 = ee13 * ee5;
-          ee29 = ee13 * ee7;
-          ee30 = ee15 * ee6;
-          ee31 = R_pow(ee5, 2);
-          ee33 = 1.5 * (ee7/(ee18 * ee6));
-          ee34 = ee4 - ee21;
-          
-          local_out(j, 0) += w * (-((ee28 - ee17)/ee14));
-          local_out(j, 1) += w * ((ee17 - ee28) * ee7/ee14 + 1);
-          local_out(j, 2) += w * ((((ee23 - 1.5) * ee16/ee5 - ee33)/ee5 + 1.5 * (ee29/
-            ee14)) * ee2/ee15);
-          local_out(j, 3) += w * (-(ee13 * ee34 * ee5/(R_pow(ee10, 2) * R_pow(ee6, 2))));
-          local_out(j, 4) += w * ((((ee21 - ee4) * ee7/ee14 + 1) * ee13 * ee5 - ee17)/
-            ee10/ee6);
-          local_out(j, 5) += w * (-(ee25/ee30));
-          local_out(j, 6) += w * (-(((ee34 * ee7/ee14 - 1) * ee13 * ee5 + ee17)/ee10 *
-            ee7/ee6));
-          local_out(j, 7) += w * (-(ee25 * ee7/ee30));
-          local_out(j, 8) += w * ((((((2.25/ee20 - 3) * ee2/ee3 + 1.5)/ee18 - 1.5 *
-            ((1.5 * (ee16/(ee18 * ee31)) - 1.5 * (ee29/(R_pow(ee10, (ee11 +
-            2)) * ee6))) * ee2/ee15)) * ee7/ee6 + (ee27 + (1.5 * ((ee22 -
-            ee33) * ee16/ee5) - 2.25 * (ee7/ee14)) * ee2/ee15 +
-            (2.25 * (ee2 * ee7/(ee10 * ee15 * ee6)) - ee27)/ee12)/ee5)/
-              ee5 - (((2.25 * (ee7/(ee10 * ee3 * ee6)) - 3) * ee2/ee3 + 1.5) *
-                ee13 + 2.25 * (ee2/(ee15 * ee31))) * ee7/ee14) * ee2/ee15);
-          
-        }
+        out(j, 0) += w * (-((ee28 - ee17)/ee14));
+        out(j, 1) += w * ((ee17 - ee28) * ee7/ee14 + 1);
+        out(j, 2) += w * ((((ee23 - 1.5) * ee16/ee5 - ee33)/ee5 + 1.5 * (ee29/
+          ee14)) * ee2/ee15);
+        out(j, 3) += w * (-(ee13 * ee34 * ee5/(R_pow(ee10, 2) * R_pow(ee6, 2))));
+        out(j, 4) += w * ((((ee21 - ee4) * ee7/ee14 + 1) * ee13 * ee5 - ee17)/
+          ee10/ee6);
+        out(j, 5) += w * (-(ee25/ee30));
+        out(j, 6) += w * (-(((ee34 * ee7/ee14 - 1) * ee13 * ee5 + ee17)/ee10 *
+          ee7/ee6));
+        out(j, 7) += w * (-(ee25 * ee7/ee30));
+        out(j, 8) += w * ((((((2.25/ee20 - 3) * ee2/ee3 + 1.5)/ee18 - 1.5 *
+          ((1.5 * (ee16/(ee18 * ee31)) - 1.5 * (ee29/(R_pow(ee10, (ee11 +
+          2)) * ee6))) * ee2/ee15)) * ee7/ee6 + (ee27 + (1.5 * ((ee22 -
+          ee33) * ee16/ee5) - 2.25 * (ee7/ee14)) * ee2/ee15 +
+          (2.25 * (ee2 * ee7/(ee10 * ee15 * ee6)) - ee27)/ee12)/ee5)/
+            ee5 - (((2.25 * (ee7/(ee10 * ee3 * ee6)) - 3) * ee2/ee3 + 1.5) *
+              ee13 + 2.25 * (ee2/(ee15 * ee31))) * ee7/ee14) * ee2/ee15);
         
       }
       
@@ -567,21 +671,157 @@ arma::mat tgevgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::fiel
     
   }
 }
-  }
+
+  return out;
+  
 }
 
-// If invalid condition was encountered, return zero matrix (or handle appropriately)
-if (invalid) {
-  // You might want to return a special value or throw an error here
-  // For now, returning zero matrix to match the early termination behavior
-  return arma::mat(n, 9, arma::fill::zeros);
-}
-
-// Combine results from all threads
-for (size_t t = 0; t < thread_outputs.size(); t++) {
-  out += thread_outputs[t];
-}
-
-return out;
-
-}
+// // [[Rcpp::export(.tgevgmrfld12_omp)]]
+// arma::mat tgevgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads = 0)
+// {
+//   
+//   int n = yc.n_rows; // number of locations
+//   
+//   // Set up OpenMP threads
+// #ifdef _OPENMP
+//   if (threads == 0) {
+//     threads = omp_get_max_threads();
+//   }
+//   omp_set_num_threads(threads);
+// #endif
+//   
+//   arma::mat out = arma::mat(n, 9, arma::fill::zeros);
+//   
+//   // Create thread-local matrices that will be combined later
+//   std::vector<arma::mat> thread_outputs;
+//   
+// #ifdef _OPENMP
+//   thread_outputs.resize(threads, arma::mat(n, 9, arma::fill::zeros));
+// #else
+//   thread_outputs.resize(1, arma::mat(n, 9, arma::fill::zeros));
+// #endif
+//   
+//   // Add early termination flag for consistency
+//   bool invalid = false;
+//   
+// #pragma omp parallel shared(invalid)
+// {
+//   int thread_id = 0;
+// #ifdef _OPENMP
+//   thread_id = omp_get_thread_num();
+// #endif
+//   
+//   arma::mat& local_out = thread_outputs[thread_id];
+//   int m;
+//   double y, w, mu, lpsi, txi, xi;
+//   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
+//   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
+//   double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
+//   double ee30, ee31, ee33, ee34;
+//   arma::vec yv, wv;
+//   
+//   // Use static scheduling to ensure deterministic order
+// #pragma omp for schedule(static) ordered
+//   for (int j=0; j < n; j++) {
+//     
+// #pragma omp ordered
+// {
+//   // Only process if no invalid condition has been found yet
+//   if (!invalid) {
+//     
+//     mu = pars(0, j);
+//     lpsi = pars(1, j);
+//     txi = pars(2, j);
+//     
+//     m = yc(j).size(); // number of obs
+//     yv = yc(j);
+//     wv = wc(j);
+//     
+//     for (int k=0; k < m; k++) {
+//       
+//       y = yv(k);
+//       w = wv(k);
+//       
+//       if(std::isfinite(y)) {
+//         
+//         ee2 = exp(-txi);
+//         ee3 = 1 + ee2;
+//         ee4 = 1.5/ee3;
+//         ee5 = ee4 - 1;
+//         ee6 = exp(lpsi);
+//         ee7 = y - mu;
+//         ee9 = ee5 * ee7/ee6;
+//         ee10 = ee9 + 1;
+//         
+//         // Check for invalid condition (same as in tgevgmrfld0_omp)
+//         if (ee5 * (y - mu) / ee6 <= -1.0) {
+//           invalid = true;
+//           break; // Can break here since we're in ordered section
+//         } else {
+//           
+//           ee11 = 1/ee5;
+//           ee12 = R_pow(ee10, ee11);
+//           ee13 = 1 + ee11;
+//           ee14 = ee10 * ee6;
+//           ee15 = R_pow(ee3, 2);
+//           ee16 = log1p(ee9);
+//           ee17 = 1/ee12;
+//           ee18 = R_pow(ee10, ee13);
+//           ee20 = ee3 * ee5;
+//           ee21 = 1 + ee17;
+//           ee22 = 1.5 * (ee16/(ee12 * ee5));
+//           ee23 = 1.5/ee12;
+//           ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
+//           ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
+//           ee28 = ee13 * ee5;
+//           ee29 = ee13 * ee7;
+//           ee30 = ee15 * ee6;
+//           ee31 = R_pow(ee5, 2);
+//           ee33 = 1.5 * (ee7/(ee18 * ee6));
+//           ee34 = ee4 - ee21;
+//           
+//           local_out(j, 0) += w * (-((ee28 - ee17)/ee14));
+//           local_out(j, 1) += w * ((ee17 - ee28) * ee7/ee14 + 1);
+//           local_out(j, 2) += w * ((((ee23 - 1.5) * ee16/ee5 - ee33)/ee5 + 1.5 * (ee29/
+//             ee14)) * ee2/ee15);
+//           local_out(j, 3) += w * (-(ee13 * ee34 * ee5/(R_pow(ee10, 2) * R_pow(ee6, 2))));
+//           local_out(j, 4) += w * ((((ee21 - ee4) * ee7/ee14 + 1) * ee13 * ee5 - ee17)/
+//             ee10/ee6);
+//           local_out(j, 5) += w * (-(ee25/ee30));
+//           local_out(j, 6) += w * (-(((ee34 * ee7/ee14 - 1) * ee13 * ee5 + ee17)/ee10 *
+//             ee7/ee6));
+//           local_out(j, 7) += w * (-(ee25 * ee7/ee30));
+//           local_out(j, 8) += w * ((((((2.25/ee20 - 3) * ee2/ee3 + 1.5)/ee18 - 1.5 *
+//             ((1.5 * (ee16/(ee18 * ee31)) - 1.5 * (ee29/(R_pow(ee10, (ee11 +
+//             2)) * ee6))) * ee2/ee15)) * ee7/ee6 + (ee27 + (1.5 * ((ee22 -
+//             ee33) * ee16/ee5) - 2.25 * (ee7/ee14)) * ee2/ee15 +
+//             (2.25 * (ee2 * ee7/(ee10 * ee15 * ee6)) - ee27)/ee12)/ee5)/
+//               ee5 - (((2.25 * (ee7/(ee10 * ee3 * ee6)) - 3) * ee2/ee3 + 1.5) *
+//                 ee13 + 2.25 * (ee2/(ee15 * ee31))) * ee7/ee14) * ee2/ee15);
+//           
+//         }
+//         
+//       }
+//       
+//     }
+//     
+//   }
+// }
+//   }
+// }
+// 
+// // If invalid condition was encountered, return zero matrix (or handle appropriately)
+// if (invalid) {
+//   // You might want to return a special value or throw an error here
+//   // For now, returning zero matrix to match the early termination behavior
+//   return arma::mat(n, 9, arma::fill::zeros);
+// }
+// 
+// // Combine results from all threads
+// for (size_t t = 0; t < thread_outputs.size(); t++) {
+//   out += thread_outputs[t];
+// }
+// 
+// return out;
+// 
+// }

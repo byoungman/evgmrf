@@ -1,4 +1,4 @@
-.inits_model <- function(model, order = 1, alpha = NA, val) {
+.inits_model <- function(model, order = 1, alpha = NA, val, bymfns) {
   if (is.na(model)) {
     out <- numeric(0)
   } else {
@@ -11,9 +11,14 @@
         if (substr(model, 1, 3) == 'bym') {
           if (model == 'bym3') {
             out <- c(lambda = val)
+            if (!is.null(bymfns)) {
+              out2 <- attr(bymfns, 'inits')
+              names(out2) <- paste0('par', seq_along(out2))
+              out <- c(out, out2)
+            }
           } else {
             if (model == 'bym4') {
-              out <- c(lambda = 1, s = log(.1))
+              out <- c(lambda = 1)
             } else {
               out <- c(lambda = val, rho = -1.6)
               out <- c(lambda = -3, rho = val)
@@ -28,7 +33,7 @@
   out        
 }
 
-.makeQ_data <- function(nx, ny, model, order, alpha, n_null, W = NULL) {
+.makeQ_data <- function(nx, ny, model, order, alpha, n_null, W = NULL, bymfns) {
   if (is.null(W)) {
     n <- nx * ny
     W <- spatstat.sparse::gridadjacencymatrix(c(nx, ny), diagonal = FALSE)
@@ -50,13 +55,22 @@
                  bym = c(1, -4), 
                  bym2 = c(1, -4),
                  bym3 = c(1),
-                 bym4 = c(1, -4))[mods]
+                 bym4 = c(1))[mods]
   app <- lapply(ords, function(x) rep(0, x - 1))
   target <- lapply(seq_along(target), function(i) c(target[[i]], app[[i]]))
   # if (any(ords > 1))
   #   target[ords > 1] <- lapply(target[ords > 1], function(x) c(x, rep(0, ords[ords > 1] - 1)))
   # reps <- sapply(mods, .model2n) + as.integer(ords > 1) - as.integer(is.finite(alphs))
   reps <- sapply(target, length)
+  if (!is.null(bymfns)) {
+    for (i in 1:length(bymfns)) {
+      fnsi <- bymfns[[i]]
+      if (!is.null(fnsi)) {
+        nargs <- length(unlist(formals(fnsi))) - 1
+        reps[i] <- reps[i] + nargs
+      }
+    }
+  }
   hyper_spl <- rep(id, reps)
   Ql <- list()
   for (i in 1:max(order)) {
@@ -66,6 +80,7 @@
   #      ord = ords, mod = mods, spl = rho_spl, np = length(id), 
   #      target = target, Ql = Ql, nx = nx, ny = ny)
   # W <- .Wlist(W, max(ords))
+  target <- target[reps > 0]
   list(n = n, n_null = n_null, W = W,
        ord = ords, mod = mods, alph = alphs, spl = hyper_spl, np = length(id), 
        target = target, Ql = Ql, nx = nx, ny = ny)
@@ -116,7 +131,9 @@
   mods <- Qd$mod
   ords <- Qd$ord
   alphs <- Qd$alph
-  hyper_spl <- .split2(rho, Qd$spl)
+  hyper_spl <- lapply(1:Qd$np, function(.) numeric(0))
+  hyper_spl[!is.na(Qd$mod)] <- .split2(rho, Qd$spl)
+  # hyper_spl <- .split2(rho, Qd$spl)
   Ql <- list()
   for (i in 1:Qd$np) {
     Ql[[i]] <- .makeQ_any(hyper_spl[[i]], Qd, mods[i], ords[i], alphs[[i]], Qd$n_null[i], Qd$R[[i]], alpha.tol)
@@ -125,6 +142,7 @@
   attr(Q, 'logdet') <- sum(sapply(Ql, attr, 'logdet'))
   attr(Q, 'test') <- unique(unlist(sapply(Ql, attr, 'test')))
   attr(Q, 'pars') <- lapply(Ql, attr, "pars")
+  attr(Q, 'splpars') <- hyper_spl
   Q
 }
 
@@ -191,10 +209,12 @@
     Q <- as(Q, 'CsparseMatrix')
   }
   attr(Q, 'logdet') <- logdet
-  if (model == 'bym2')
-    attr(Q, 'test') <- p2
-  if (model == 'bym4')
-    attr(Q, 'pars') <- pars
+  if (!is.na(model)) {
+    if (model == 'bym2')
+      attr(Q, 'test') <- p2
+    if (model == 'bym4')
+      attr(Q, 'pars') <- pars
+  }
   Q
 }
 

@@ -15,7 +15,9 @@
       if (model == 'car') {
         out <- c(1, -4)
       } else {
-        if (model == 'bym') {
+        if (model == 'bym4') {
+          out <- 1
+        } else {
           out <- c(1, -4)
         }
       }
@@ -25,13 +27,16 @@
 }
 
 .control.evgmrf <- function() {
-  list(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-3, reml_direction = 'ad-hoc',
+  out <- list(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-3, reml_direction = 'ad-hoc',
        reml_steptol = 5e-3, reml_stepmax = 1, reml_itlim = 1e2, inner_optim = 'chol',
-       alpha.tol = 1e-6, grad_mult = 0, par_mult = .1, super = TRUE, update = FALSE, 
+       alpha.tol = 1e-6, grad_mult = 0, par_mult = .1, update = FALSE, 
        openmp = FALSE, threads = 0, perturb.tol = 1e-2, perturb.mult = 5, 
        perturb.method = 'chol', perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10,
-       cv_eps = 5e-2, cv_gradtol = .05, cv_steptol = 1e-4,
+       cv_eps = 5e-2, cv_gradtol = .05, cv_steptol = 1e-4, super = FALSE,
        sandwich = FALSE)
+  if (out$inner_optim == 'Cholesky' | out$perturb.method == 'Cholesky')
+    out$super <- TRUE
+  out
 }
 
 ## REML functions
@@ -214,6 +219,24 @@ dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
   out
 }
 
+.pend012 <- function(pars, fn, lst, deriv = 0, eps = 1e-4) {
+  out <- list()
+  lst$x <- pars
+  f0 <- do.call(fn, lst)
+  out[[1]] <- sum(f0)
+  if (deriv == 0)
+    return(out[[1]])
+  ph <- pars + eps
+  pl <- pars - eps
+  lst$x <- ph
+  fh <- do.call(fn, lst)
+  lst$x <- pl
+  fl <- do.call(fn, lst)
+  out[[2]] <- .5 * (fh - fl) / eps
+  out[[3]] <- (fh + fl - 2 * f0) / (eps^2)
+  out
+}
+
 .d0_Q <- function(pars, likdata, likfns, Q) {
   pl <- split(pars, likdata$psplit)
   pm <- t(sapply(seq_along(pl), function(i) as.vector(likdata$Xl[[i]] %*% pl[[i]])))
@@ -231,11 +254,21 @@ dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
   # matrix(likfns$d12(as.matrix(pm2), likdata2)[[2]][1, c(1, 2, 3, 2, 4, 5, 3, 5, 6)], 3, 3)
   out <- likdata$mult * likfns$d0(as.matrix(pm), likdata)
   # maybe reinstate this with model = bym4 identifier
-  if (likdata$bym4) {
-  if (any(unlist(likdata$id_bym2))) {
-    temp <- exp(unlist(attr(Q, 'pars')))
-    out <- out + .pend012(pars[unlist(likdata$id_bym2)], s = temp[2])
-  }
+  if (!is.null(likdata$bymfns)) {
+  # if (any(unlist(likdata$id_bym2))) {
+    # temp <- exp(unlist(attr(Q, 'pars')))
+    for (i in seq_along(pl)) {
+      if (!is.null(likdata$bymfns[[i]])) {
+        xi <- pl[[i]][likdata$id_bym2[[i]]]
+        parsi <- attr(Q, 'splpars')[[i]][-1]
+        if (length(parsi) > 0) {
+          parsi <- as.list(parsi)
+        }
+        out <- out + .pend012(xi, likdata$bymfns[[i]], parsi)
+      }
+    }
+    # out <- out + .pend012(pars[unlist(likdata$id_bym2)], s = temp[2])
+  # }
   }
   out <- out + .5 * crossprod(pars, Q %*% pars)[1, 1]
   if (!is.finite(out))
@@ -319,19 +352,39 @@ dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
   H <- Matrix::sparseMatrix(r2, c2, x = as.vector(t(H)), symmetric = TRUE)
   H <- likdata$mult * crossprod(likdata$X, H %*% likdata$X)
   out$H <- H + Q
-  if (likdata$bym4) {
-  if (any(unlist(likdata$id_bym2))) {
-    temp <- exp(unlist(attr(Q, 'pars')))
-    temp <- .pend012(pars[unlist(likdata$id_bym2)], s = temp[2], deriv = 2)
-    # temp <- .pend012(pars[unlist(likdata$id_bym2)], s = attr(Q, 'test'), deriv = 2)
-    id <- unlist(likdata$id_bym2)
-    g0 <- H0 <- numeric(length(out$g))
-    g0[id] <- temp[[2]]
-    out$g <- out$g + g0
-    H0[id] <- temp[[3]]
-    H0 <- Matrix::Diagonal(n = length(H0), x = H0)
+  # if (likdata$bym4) {
+  # # if (any(unlist(likdata$id_bym2))) {
+  #   temp <- exp(unlist(attr(Q, 'pars')))
+  #   browser()
+  #   temp <- .pend012(pars[unlist(likdata$id_bym2)], s = temp[2], deriv = 2)
+  #   # temp <- .pend012(pars[unlist(likdata$id_bym2)], s = attr(Q, 'test'), deriv = 2)
+  #   id <- unlist(likdata$id_bym2)
+  #   g0 <- H0 <- numeric(length(out$g))
+  #   g0[id] <- temp[[2]]
+  #   out$g <- out$g + g0
+  #   H0[id] <- temp[[3]]
+  #   H0 <- Matrix::Diagonal(n = length(H0), x = H0)
+  #   out$H <- out$H + H0
+  # }
+  if (!is.null(likdata$bymfns)) {
+    # if (any(unlist(likdata$id_bym2))) {
+    # temp <- exp(unlist(attr(Q, 'pars')))
+    gl <- Hl <- list()
+    for (i in seq_along(pl)) {
+      if (!is.null(likdata$bymfns[[i]])) {
+        parsi <- attr(Q, 'splpars')[[i]][-1]
+        if (length(parsi) > 0) {
+          parsi <- as.list(parsi)
+        }
+        temp <- .pend012(pl[[i]][likdata$id_bym2[[i]]], fn = likdata$bymfns[[i]], parsi, deriv = 2)
+        gl[[i]] <- Hl[[i]] <- numeric(length(pl[[i]]))
+        gl[[i]][likdata$id_bym2[[i]]] <- temp[[2]]
+        Hl[[i]][likdata$id_bym2[[i]]] <- temp[[3]]
+      }
+    }
+    out$g <- out$g + unlist(gl)
+    H0 <- Matrix::Diagonal(n = length(out$g), x = unlist(Hl))
     out$H <- out$H + H0
-  }
   }
   out
 }

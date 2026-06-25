@@ -163,28 +163,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // tgevgmrfld0_omp
-double tgevgmrfld0_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+double tgevgmrfld0_omp(const arma::mat& pars, const arma::field<arma::vec>& yc, const arma::field<arma::vec>& wc, int threads);
 RcppExport SEXP _evgmrf_tgevgmrfld0_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::vec>& >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::vec>& >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     rcpp_result_gen = Rcpp::wrap(tgevgmrfld0_omp(pars, yc, wc, threads));
     return rcpp_result_gen;
 END_RCPP
 }
 // tgevgmrfld12_omp
-arma::mat tgevgmrfld12_omp(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc, int threads);
+arma::mat tgevgmrfld12_omp(const arma::mat& pars, const arma::field<arma::vec>& yc, const arma::field<arma::vec>& wc, int threads);
 RcppExport SEXP _evgmrf_tgevgmrfld12_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type yc(ycSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::vec> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::vec>& >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::vec>& >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     rcpp_result_gen = Rcpp::wrap(tgevgmrfld12_omp(pars, yc, wc, threads));
     return rcpp_result_gen;
@@ -623,28 +623,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // rlargegmrfld0_omp
-double rlargegmrfld0_omp(arma::mat pars, arma::field<arma::mat> yc, arma::field<arma::mat> wc, int threads);
+double rlargegmrfld0_omp(const arma::mat& pars, const arma::field<arma::mat>& yc, const arma::field<arma::mat>& wc, int threads);
 RcppExport SEXP _evgmrf_rlargegmrfld0_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type yc(ycSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::mat>& >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::mat>& >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     rcpp_result_gen = Rcpp::wrap(rlargegmrfld0_omp(pars, yc, wc, threads));
     return rcpp_result_gen;
 END_RCPP
 }
 // rlargegmrfld12_omp
-arma::mat rlargegmrfld12_omp(arma::mat pars, arma::field<arma::mat> yc, arma::field<arma::mat> wc, int threads);
+arma::mat rlargegmrfld12_omp(const arma::mat& pars, const arma::field<arma::mat>& yc, const arma::field<arma::mat>& wc, int threads);
 RcppExport SEXP _evgmrf_rlargegmrfld12_omp(SEXP parsSEXP, SEXP ycSEXP, SEXP wcSEXP, SEXP threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type yc(ycSEXP);
-    Rcpp::traits::input_parameter< arma::field<arma::mat> >::type wc(wcSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::mat>& >::type yc(ycSEXP);
+    Rcpp::traits::input_parameter< const arma::field<arma::mat>& >::type wc(wcSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     rcpp_result_gen = Rcpp::wrap(rlargegmrfld12_omp(pars, yc, wc, threads));
     return rcpp_result_gen;
