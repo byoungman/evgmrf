@@ -698,6 +698,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// chol_idiag
+Eigen::VectorXd chol_idiag(const Eigen::SparseMatrix<double>& A);
+RcppExport SEXP _evgmrf_chol_idiag(SEXP ASEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type A(ASEXP);
+    rcpp_result_gen = Rcpp::wrap(chol_idiag(A));
+    return rcpp_result_gen;
+END_RCPP
+}
+// chol_idiag_omp
+Eigen::VectorXd chol_idiag_omp(const Eigen::SparseMatrix<double>& A, int threads);
+RcppExport SEXP _evgmrf_chol_idiag_omp(SEXP ASEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(chol_idiag_omp(A, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // chol_logdet
 double chol_logdet(const Eigen::SparseMatrix<double>& A);
 RcppExport SEXP _evgmrf_chol_logdet(SEXP ASEXP) {
@@ -775,6 +798,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_evgmrf_rlarged1", (DL_FUNC) &_evgmrf_rlarged1, 2},
     {"_evgmrf_rlarged2", (DL_FUNC) &_evgmrf_rlarged2, 2},
     {"_evgmrf_chol_logdet_solve", (DL_FUNC) &_evgmrf_chol_logdet_solve, 2},
+    {"_evgmrf_chol_idiag", (DL_FUNC) &_evgmrf_chol_idiag, 1},
+    {"_evgmrf_chol_idiag_omp", (DL_FUNC) &_evgmrf_chol_idiag_omp, 2},
     {"_evgmrf_chol_logdet", (DL_FUNC) &_evgmrf_chol_logdet, 1},
     {"_evgmrf_chol_solve_mat", (DL_FUNC) &_evgmrf_chol_solve_mat, 2},
     {NULL, NULL, 0}

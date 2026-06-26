@@ -210,6 +210,14 @@
     .Call(`_evgmrf_chol_logdet_solve`, A, b)
 }
 
+.chol_idiag <- function(A) {
+    .Call(`_evgmrf_chol_idiag`, A)
+}
+
+.chol_idiag_omp <- function(A, threads = 0L) {
+    .Call(`_evgmrf_chol_idiag_omp`, A, threads)
+}
+
 .ldchol <- function(A) {
     .Call(`_evgmrf_chol_logdet`, A)
 }

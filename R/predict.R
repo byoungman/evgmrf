@@ -41,7 +41,8 @@
 predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
                            simplify2array = FALSE, xid = 1:object$nx, yid = 1:object$ny,
                            loop = TRUE, progress = loop, chunksize = 1e2, se.method = 'direct',
-                           nsim = 1e3, decompose = FALSE, sdif = 1, ...) {
+                           nsim = 1e3, decompose = FALSE, sdif = 1, 
+                           openmp = object$control$openmp, threads = object$control$threads, ...) {
   if (se.fit & decompose)
     stop("Decomposed parameters can only be plotted for type = 'link'.")
   type0 <- type
@@ -151,6 +152,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
         }
         se <- object$diagHessian * sqrt(se / nsim)
       } else {
+        if (!openmp) {
         if (progress)
           pb <- txtProgressBar(min = 0, max = nv / chunksize, style = 3)
         if (!loop) {
@@ -173,6 +175,9 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
             if (progress) setTxtProgressBar(pb, j)
           }
         }
+      } else {
+        se <- dH * .chol_idiag_omp(object$precondHessian, object$control$threads)
+      }
       }
       se <- split(se, rep(1:object$np, each = object$n))
       if (type == 'response') {

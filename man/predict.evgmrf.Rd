@@ -20,6 +20,8 @@
   nsim = 1000,
   decompose = FALSE,
   sdif = 1,
+  openmp = object$control$openmp,
+  threads = object$control$threads,
   ...
 )
 }

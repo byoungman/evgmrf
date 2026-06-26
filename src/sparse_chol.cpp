@@ -1,5 +1,9 @@
 #include <RcppEigen.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::plugins(cpp11)]]
 
@@ -63,6 +67,83 @@ Rcpp::List chol_logdet_solve(const Eigen::SparseMatrix<double>& A, const Eigen::
   );
 }
 
+// Compute square root diagonal of inverse of A
+// [[Rcpp::export(.chol_idiag)]]
+Eigen::VectorXd chol_idiag(const Eigen::SparseMatrix<double>& A) {
+
+  // Compute Cholesky decomposition using Eigen's SimplicialLLT
+  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> chol(A);
+  
+  if (chol.info() != Eigen::Success) {
+    Rcpp::stop("Cholesky decomposition failed. Ensure A is positive definite.");
+  }
+  
+  // Extract diagonal elements of L manually
+  int n = A.rows();
+  Eigen::VectorXd out(n);
+  Eigen::VectorXd e(n);
+  Eigen::VectorXd z(n);
+  
+  for (int i = 0; i < n; ++i) {
+    e.setZero();
+    e[i] = 1.0;
+    z = chol.solve(e);
+    out[i] = std::sqrt(z[i]);
+  }
+  
+  return out;
+}
+
+// Compute square root diagonal of inverse of A using OpenMP
+// [[Rcpp::export(.chol_idiag_omp)]]
+Eigen::VectorXd chol_idiag_omp(const Eigen::SparseMatrix<double>& A, int threads = 0) {
+   
+   // Compute Cholesky decomposition using Eigen's SimplicialLLT
+   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> chol(A);
+   
+   if (chol.info() != Eigen::Success) {
+     Rcpp::stop("Cholesky decomposition failed. Ensure A is positive definite.");
+   }
+   
+   int n = A.rows();
+   Eigen::VectorXd out = Eigen::VectorXd::Zero(n);
+   
+   // Configure OpenMP threads if available
+   // Set up OpenMP threads
+#ifdef _OPENMP
+   if (threads == 0) {
+     threads = omp_get_max_threads();
+   }
+   omp_set_num_threads(threads);
+#endif
+   
+   // Parallelise the loop. 
+   // We use 'private' for loop counters and thread-local workspace vectors.
+#pragma omp parallel
+{
+  // Thread-local vectors prevent race conditions and cross-thread memory corruption
+  Eigen::VectorXd e_local = Eigen::VectorXd::Zero(n);
+  Eigen::VectorXd z_local = Eigen::VectorXd::Zero(n);
+  
+#pragma omp for schedule(static)
+  for (int i = 0; i < n; ++i) {
+    // Isolate the unit pulse vector
+    e_local(i) = 1.0;
+    
+    // Solve the system
+    z_local = chol.solve(e_local);
+    
+    // Extract diagonal element
+    out(i) = std::sqrt(z_local(i));
+    
+    // Clean up vector for next loop iteration
+    e_local(i) = 0.0;
+  }
+}
+
+return out;
+}
+ 
 // Compute Cholesky decomposition, log(det(A)), and solve Az = b
 // [[Rcpp::export(.ldchol)]]
 double chol_logdet(const Eigen::SparseMatrix<double>& A) {

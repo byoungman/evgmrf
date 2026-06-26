@@ -36,9 +36,11 @@
 .makeQ_data <- function(nx, ny, model, order, alpha, n_null, W = NULL, bymfns) {
   if (is.null(W)) {
     n <- nx * ny
-    W <- spatstat.sparse::gridadjacencymatrix(c(nx, ny), diagonal = FALSE)
+    # W <- spatstat.sparse::gridadjacencymatrix(c(nx, ny), diagonal = FALSE)
+    given_W <- FALSE
   } else {
     n <- nrow(W)
+    given_W <- TRUE
   }
   # d <- Matrix::colSums(W)
   # ldetD <- sum(log(d))
@@ -73,8 +75,10 @@
   }
   hyper_spl <- rep(id, reps)
   Ql <- list()
-  for (i in 1:max(order)) {
+  if (!given_W) {
+    for (i in 1:max(order)) {
       Ql[[i]] <- .makeQ_order(nx, ny, i)
+    }
   }
   # list(D = D, B = B, W = W, n = n, ldetD = ldetD, n_null = n_null, 
   #      ord = ords, mod = mods, spl = rho_spl, np = length(id), 
@@ -250,7 +254,11 @@
 }
 
 .makeQ <- function(Qd, rho, alpha, order) {
-  Q <- Qd$Ql[[1]]
+  if (!is.null(Qd$W)) {
+    D <- Matrix::Diagonal(x = Matrix::rowSums(Qd$W))
+    Q <- D - rho * Qd$W
+  } else {
+    Q <- Qd$Ql[[1]]
 #  Ql <- mapply('*', Qd$Ql, c(1, alpha))
 #  return(Reduce('+', Ql))
 #  browser()
@@ -258,10 +266,11 @@
     for (i in 2:order)
       Q <- Q + alpha[i - 1] * Qd$Ql[[i]]
   }
+  }
   return(Q)
   # alpha_seq <- alpha^(seq_along(Wlist) - 1)
   # Wlist <- mapply('*', Wlist, alpha_seq)
   # W <- Reduce('+', Wlist)
-  D <- Matrix::Diagonal(x = Matrix::rowSums(W))
-  D - rho * W
+  # D <- Matrix::Diagonal(x = Matrix::rowSums(W))
+  # D - rho * W
 }
