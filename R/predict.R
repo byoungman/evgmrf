@@ -16,6 +16,7 @@
 #' @param se.method to do
 #' @param nsim to do
 #' @param decompose to do
+#' @param drop.parametric to do
 #' @param ... unused
 #' @param sdif standard deviation inflation factor; defaults to 1
 #' 
@@ -39,9 +40,9 @@
 #' @export
 #' 
 predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
-                           simplify2array = FALSE, xid = 1:object$nx, yid = 1:object$ny,
+                           simplify2array = FALSE, xid = object$xid, yid = object$yid,
                            loop = TRUE, progress = loop, chunksize = 1e2, se.method = 'direct',
-                           nsim = 1e3, decompose = FALSE, sdif = 1, 
+                           nsim = 1e3, decompose = FALSE, drop.parametric = FALSE, sdif = 1, 
                            openmp = object$control$openmp, threads = object$control$threads, ...) {
   if (se.fit & decompose)
     stop("Decomposed parameters can only be plotted for type = 'link'.")
@@ -50,6 +51,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
     type <- 'quantile'
   if (type == 'quantile')
     type0 <- 'response'
+  openmp <- object$likdata$openmp
   out <- .fitted_values(object$beta, object$likdata, decompose)
   np <- nrow(out)#object$likdata$np0
   if (!object$holes) {
@@ -72,17 +74,21 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
   # }
   nms <- as.list(object$names[[type0]])
   if (decompose) {
-    is.bym2 <- which(object$model %in% paste('bym', 2:4, sep = ''))
-    if (length(is.bym2)) {
-      for (i in is.bym2)
-        nms[[i]] <- paste(nms[[i]], c('spatial', 'random'), sep = ': ')
-    }
+    for (i in 1:length(nms))
+      nms[[i]] <- paste(nms[[i]], object$par_type[[i]], sep = ': ')
+    # is.bym2 <- which(object$model %in% paste('bym', 2:4, sep = ''))
+    # if (length(is.bym2)) {
+    #   for (i in is.bym2)
+    #     nms[[i]] <- paste(nms[[i]], c('spatial', 'random'), sep = ': ')
+    # }
   }
   names(out) <- unlist(nms)
-  if (type != 'link' & decompose) {
-    if(any(paste('bym', 2:4, sep = '') %in% object$model))
-      out <- out[- grep('random', names(out))]
-  }
+  if (decompose & drop.parametric)
+    out <- out[unlist(object$par_type) != 'parametric']
+  # if (type != 'link' & decompose) {
+  #   if(any(paste('bym', 2:4, sep = '') %in% object$model))
+  #     out <- out[- grep('random', names(out))]
+  # }
   if (type %in% c('response', 'quantile')) {
     if (se.fit) {
       out0 <- out

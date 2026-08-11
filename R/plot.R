@@ -5,6 +5,7 @@
 #' @param x a fitted \code{evgmrf} object
 #' @param type a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}
 #' @param prob a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5
+#' @param polygons to do 
 #' @param lims to do
 #' @param nlev to do
 #' @param edge.drop to do
@@ -13,6 +14,7 @@
 #' @param yid to do
 #' @param nrc to do
 #' @param decompose to do
+#' @param drop.parametric to do
 #' @param ... arguments passed to \code{lattice::levelplot}
 #' 
 #' @details
@@ -34,12 +36,13 @@
 #' 
 #' @export
 #' 
-plot.evgmrf <- function(x, type = 'link', prob = NULL, 
+plot.evgmrf <- function(x, type = 'link', prob = NULL, polygons = NULL,
                         lims = NULL, nlev = NULL, edge.drop, index = x$index, 
-                        xid = 1:x$nx, yid = 1:x$ny, nrc = NULL, decompose = FALSE, layout = NULL, 
-                        ...) {
+                        xid = 1:x$nx, yid = 1:x$ny, nrc = NULL, decompose = FALSE, drop.parametric = TRUE,
+                        layout = NULL, ...) 
+  {
   out <- predict.evgmrf(x, type = type, index = index, prob = prob, 
-                        xid = xid, yid = yid, decompose = decompose)
+                        xid = xid, yid = yid, decompose = decompose, drop.parametric = drop.parametric)
   nms <- names(out)
   if (!missing(edge.drop))
     out <- lapply(out, .drop.edge, edrop = edge.drop)
@@ -55,8 +58,13 @@ plot.evgmrf <- function(x, type = 'link', prob = NULL,
   }
   if (length(nlev) == 1)
     nlev <- rep(nlev, length(out))
-  plots <- lapply(1:length(out), function(i) 
-    lattice::levelplot(out[[i]], at = pretty(lims[[i]], nlev), main = nms[i], ...))
+  if (is.null(polygons)) {
+    plots <- lapply(1:length(out), function(i) 
+      lattice::levelplot(out[[i]], at = pretty(lims[[i]], nlev[i]), main = nms[i], ...))
+  } else {
+    plots <- lapply(1:length(out), function(i) 
+      .plot.polygons(polygons, out[[i]], n = nlev[i], main = nms[i], ...))
+  }
   if (is.null(layout)) {
     lm <- matrix(1:(nrc[1] * nrc[2]), nrc[1], byrow = !decompose)
   } else {
@@ -72,6 +80,33 @@ plot.evgmrf <- function(x, type = 'link', prob = NULL,
     # ncol = nrc[2], # Number of columns
     # nrow = nrc[1]  # Number of rows
   )
+}
+
+.plot.polygons <- function(polys, values, n = 15, main = '', ...) {
+  
+  x.rg <- range(unlist(sapply(polys, '[[', 1)))
+  y.rg <- range(unlist(sapply(polys, '[[', 2)))
+  brks <- pretty(values, n = n)
+  rmp <- lattice::trellis.par.get("regions")$col
+  cols <- lattice::level.colors(x = values, at = brks, col.regions = rmp)
+  lattice::xyplot(1 ~ 1, 
+         xlim = x.rg, ylim = y.rg,
+         xlab = "x", ylab = "y", main = main,
+
+         legend = list(
+           right = list(
+             fun = lattice::draw.colorkey,
+             args = list(key = list(at = brks, col = rmp, ticks = list(at = brks))))
+         ),
+         
+         panel = function(...) {
+           for (i in 1:length(polys)) {
+             lattice::panel.polygon(x = polys[[i]][[1]], y = polys[[i]][[2]], 
+                           col = cols[i], border = "darkgrey", lwd = 2)
+           }
+         }, ...
+  )
+  
 }
 
 .drop.edge <- function(mat, edrop) {

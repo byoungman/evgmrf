@@ -252,7 +252,7 @@ dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
   # g1 <- likfns$d1(as.matrix(pm2), likdata2)
   # numDeriv::hessian(function(x) likfns$d0(matrix(x, 3), likdata2), pm2)[1:3, 1:3]
   # matrix(likfns$d12(as.matrix(pm2), likdata2)[[2]][1, c(1, 2, 3, 2, 4, 5, 3, 5, 6)], 3, 3)
-  out <- likdata$mult * likfns$d0(as.matrix(pm), likdata)
+  out0 <- likdata$mult * likfns$d0(as.matrix(pm), likdata)
   # maybe reinstate this with model = bym4 identifier
   if (!is.null(likdata$bymfns)) {
   # if (any(unlist(likdata$id_bym2))) {
@@ -261,18 +261,19 @@ dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
       if (!is.null(likdata$bymfns[[i]])) {
         xi <- pl[[i]][likdata$id_bym2[[i]]]
         parsi <- attr(Q, 'splpars')[[i]][-1]
-        if (length(parsi) > 0) {
-          parsi <- as.list(parsi)
-        }
-        out <- out + .pend012(xi, likdata$bymfns[[i]], parsi)
+        #if (length(parsi) > 0) {
+        #  parsi <- as.list(parsi)
+        #}
+        out0 <- out0 + .pend012(xi, likdata$bymfns[[i]], as.list(parsi))
       }
     }
     # out <- out + .pend012(pars[unlist(likdata$id_bym2)], s = temp[2])
   # }
   }
-  out <- out + .5 * crossprod(pars, Q %*% pars)[1, 1]
+  out <- out0 + .5 * crossprod(pars, Q %*% pars)[1, 1]
   if (!is.finite(out))
     out <- 1e20
+  attr(out, 'unpenalised') <- out0
   out
 }
 
@@ -366,18 +367,17 @@ dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
   #   H0 <- Matrix::Diagonal(n = length(H0), x = H0)
   #   out$H <- out$H + H0
   # }
+  gl <- Hl <- lapply(pl, function(x) 0 * x)
   if (!is.null(likdata$bymfns)) {
     # if (any(unlist(likdata$id_bym2))) {
     # temp <- exp(unlist(attr(Q, 'pars')))
-    gl <- Hl <- list()
     for (i in seq_along(pl)) {
       if (!is.null(likdata$bymfns[[i]])) {
         parsi <- attr(Q, 'splpars')[[i]][-1]
-        if (length(parsi) > 0) {
-          parsi <- as.list(parsi)
-        }
-        temp <- .pend012(pl[[i]][likdata$id_bym2[[i]]], fn = likdata$bymfns[[i]], parsi, deriv = 2)
-        gl[[i]] <- Hl[[i]] <- numeric(length(pl[[i]]))
+        # if (length(parsi) > 0) {
+        #   parsi <- as.list(parsi)
+        # }
+        temp <- .pend012(pl[[i]][likdata$id_bym2[[i]]], fn = likdata$bymfns[[i]], as.list(parsi), deriv = 2)
         gl[[i]][likdata$id_bym2[[i]]] <- temp[[2]]
         Hl[[i]][likdata$id_bym2[[i]]] <- temp[[3]]
       }

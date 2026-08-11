@@ -146,6 +146,8 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
         args$u <- sapply(zl, function(x) x[args$r])
       }
     }
+    if (length(args$u) == 1)
+      args$u <- rep(args$u, length(zl))
     u <- as.vector(args$u)
     if (length(u) != length(zl))
       stop("args$u is incompatible with z.")
@@ -270,11 +272,22 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
     p0m <- matrix(p0m, n, 1)
   }
   .ld$np0 <- .ld$np
+  if (!is.list(order)) {
+    if (is.vector(order)) {
+      if (length(order) == 1)
+        order <- rep(order, .ld$np)
+      order <- lapply(order, seq_len)
+    }
+  } else {
+    if (length(order) == 1)
+      order <- rep(order, .ld$np)
+  }
+  order <- lapply(order, sort)
   if (.ld$np > 1) {
     if (length(model) == 1)
       model <- rep(model, .ld$np)
-    if (length(order) == 1)
-      order <- rep(order, .ld$np)
+    # if (length(order) == 1)
+    #   order <- rep(order, .ld$np)
     if (length(alpha) == 1)
       alpha <- rep(alpha, .ld$np)
   }  
@@ -303,28 +316,33 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   }
   X1 <- lapply(formula, model.matrix, data = covariates)
   nX1 <- sapply(X1, ncol)
-  p0l <- list()
+  p0l <- id_bym2 <- par_type <- list()
   for (i in 1:.ld$np0) {
     if (nX1[[i]] > 0) {
       b0 <- solve(crossprod(X1[[i]]), crossprod(X1[[i]], p0m[, i]))
       b1 <- as.vector(X1[[i]] %*% b0)
       p0m[, i] <- p0m[, i] - b1
+      par_type[[i]] <- c('parametric')
     } else {
       b0 <- numeric(0)
+      par_type[[i]] <- character()
     }
-    p0l[[i]] <- b0
+    p0l[[i]] <- list(b0, p0m[, i])
   }
   if (!is.null(bymfns))
     model[!sapply(bymfns, is.null) & is.na(model)] <- 'bym4'
-  id_bym2 <- lapply(p0l, function(x) rep(FALSE, length(x)))
+  # id_bym2 <- lapply(p0l, function(x) rep(FALSE, length(x)))
   for (i in which(gmrf)) {
-    p0l[[i]] <- c(p0l[[i]], p0m[, i])
-    id_bym2[[i]] <- c(id_bym2[[i]], rep(FALSE, length(p0m[, i])))
+    # p0l[[i]] <- c(p0l[[i]], p0m[, i])
+    id_bym2[[i]] <- rep(c(FALSE, FALSE), sapply(p0l[[i]], length))
+    par_type[[i]] <- c(par_type[[i]], 'spatial')
     if (model[i] %in% paste('bym', 2:4, sep = '')) {
-      id_bym2[[i]] <- rep(c(FALSE, TRUE), c(.ld$n, length(p0l[[i]])))
-      p0l[[i]] <- c(numeric(.ld$n), p0l[[i]])
+      id_bym2[[i]] <- c(id_bym2[[i]], rep(TRUE, .ld$n))
+      p0l[[i]] <- c(p0l[[i]][[1]], .1 * p0l[[i]][[2]], .9 * p0l[[i]][[2]])
+      par_type[[i]] <- c(par_type[[i]], 'random')
     }
   }
+  p0l <- lapply(p0l, unlist)
   .ld$psplit <- rep(seq_along(p0l), sapply(p0l, length))
   ## put together GMRF stuff
   if (!is.null(W)) {
@@ -344,9 +362,9 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
       .ld$Xl[[i]] <- do.call(cbind, .ld$Xl[[i]])
   }
   # .ld$Xl <- lapply(seq_along(.ld$Xl), function(i) do.call(cbind, .ld$Xl[[i]]))
-  Qd0$R <- list()
-  for (i in which(gmrf))
-    Qd0$R[[i]] <- Matrix::qrR(Matrix::qr(rbind(.ld$Xl[[i]], .ld$Xl[[i]])))
+  # Qd0$R <- list()
+  # for (i in which(gmrf))
+  #   Qd0$R[[i]] <- Matrix::qrR(Matrix::qr(rbind(.ld$Xl[[i]], .ld$Xl[[i]])))
   .ld$X <- Matrix::.bdiag(.ld$Xl)
   .ld$X0 <- Matrix::Diagonal(.ld$n)
   .ld$id_bym2 <- id_bym2
@@ -441,6 +459,10 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   out$likdata <- .ld
   out$likfns <- .lf
   out$family <- family
+  if (is.null(nx)) {
+    nx <- .ld$n
+    ny <- 1
+  }
   if (is.null(index)) {
     if (!is.null(nx) & !is.null(ny))
       index <- as.matrix(expand.grid(row = 1:nx, col = 1:ny))
@@ -458,19 +480,31 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   }
   out$X <- .ld$Xl
   out$holes <- holes
-  out$nx <- nx
-  out$ny <- ny
+  out$nx <- ifelse(is.null(nx), .ld$n, nx)
+  out$xid <- 1:nx
+  out$ny <- ifelse(is.null(ny), 1, ny)
+  out$yid <- 1:ny
   out$n <- .ld$n
   out$np <- .ld$np0
   out$unlink <- .lf$trans
   out$names <- .lf$names
+  out$call <- sys.call()
   out$quantile <- .lf$quantile
   out$quantile0 <- .lf$quantile0
   out$gmrf <- gmrf
+  order[!gmrf] <- model[!gmrf] <- NA
+  names(formula) <- names(order) <- names(model) <- .lf$names$response
+  out$formula <- formula
+  out$order <- order
   out$model <- model
   attr(out$beta, 'split') <- .ld$psplit
   out$index <- index
   out$init <- p0m
+  out$logLik <- list(unpenalized = -attr(out$objective, 'unpenalised'),
+                     penalized = -attr(out$objective, 'penalised'),
+                     restricted = -as.numeric(out$objective))
+  out$nobs <- sum(!is.na(z))
+  out$par_type <- par_type
   if (control$sandwich) {
     names(out$pars) <- names(lambda0)
     # G <- .G_Q(out$beta, likdata = .ld, likfns = .lf, Q = .mQ(out$pars, Qd0))

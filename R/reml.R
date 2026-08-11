@@ -24,6 +24,8 @@
   }
   beta1 <- fit$par
   out <- fit$objective
+  attr(out, 'unpenalised') <- attr(fit$objective, 'unpenalised')
+  attr(out, 'penalised') <- as.numeric(fit$objective)
   out <- out + .5 * attr(fit$gradient, 'ldet')
   out <- out - .5 * attr(Q, 'logdet')
   out <- out + likdata$control$par_mult * sum(unlist(mapply('-', split(pars, Qd$spl), Qd$target))^2)

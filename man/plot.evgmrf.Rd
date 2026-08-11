@@ -8,6 +8,7 @@
   x,
   type = "link",
   prob = NULL,
+  polygons = NULL,
   lims = NULL,
   nlev = NULL,
   edge.drop,
@@ -16,6 +17,7 @@
   yid = 1:x$ny,
   nrc = NULL,
   decompose = FALSE,
+  drop.parametric = TRUE,
   layout = NULL,
   ...
 )
@@ -26,6 +28,8 @@
 \item{type}{a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}}
 
 \item{prob}{a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5}
+
+\item{polygons}{to do}
 
 \item{lims}{to do}
 
@@ -42,6 +46,8 @@
 \item{nrc}{to do}
 
 \item{decompose}{to do}
+
+\item{drop.parametric}{to do}
 
 \item{...}{arguments passed to \code{lattice::levelplot}}
 }

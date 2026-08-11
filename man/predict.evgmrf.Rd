@@ -11,14 +11,15 @@
   prob = NULL,
   index = object$index,
   simplify2array = FALSE,
-  xid = 1:object$nx,
-  yid = 1:object$ny,
+  xid = object$xid,
+  yid = object$yid,
   loop = TRUE,
   progress = loop,
   chunksize = 100,
   se.method = "direct",
   nsim = 1000,
   decompose = FALSE,
+  drop.parametric = FALSE,
   sdif = 1,
   openmp = object$control$openmp,
   threads = object$control$threads,
@@ -53,6 +54,8 @@
 \item{nsim}{to do}
 
 \item{decompose}{to do}
+
+\item{drop.parametric}{to do}
 
 \item{sdif}{standard deviation inflation factor; defaults to 1}
 
