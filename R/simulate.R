@@ -1,32 +1,51 @@
-#' Simulations from a fitted \code{evgmrf} object.
+#' Simulations from a fitted \code{evgmrf} object
 #'
-#' Produces plots of parameters or quantiles from a \code{evgmrf} fit.
+#' Simulates parameters or quantiles from the posterior or predictive 
+#' distribution of a fitted \code{evgmrf} model.
 #'
-#' @param object a fitted \code{evgmrf} object
-#' @param nsim to do
-#' @param seed an integer giving the seed for simulations
-#' @param type a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}
-#' @param prob a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5
-#' @param simplify2array to do
-#' @param decompose to do
-#' @param ... unused
+#' @param object A fitted \code{evgmrf} object.
+#' @param nsim An integer specifying the number of simulation paths to generate. 
+#'   Defaults to `1`.
+#' @param seed An integer giving the seed for simulations, passed directly to 
+#'   \code{\link{set.seed}}. If `NULL`, the current random number generator state 
+#'   is preserved.
+#' @param type A character string giving the type of simulation sought. Supported 
+#'   options are \code{"link"} (the linear predictor scale) or \code{"response"} 
+#'   (the inverse-link parameter scale). If \code{prob} is supplied, this parameter 
+#'   is overridden to compute values on the quantile scale. Defaults to \code{"link"}.
+#' @param prob A scalar or vector of probabilities mapping to quantiles to be 
+#'   estimated. If supplied, the simulations will evaluate predictions on the 
+#'   quantile scale. Defaults to `NULL`.
+#' @param simplify2array Logical; if `TRUE` (the default), simulated paths are 
+#'   coerced and dropped into spatial arrays dimensioned to match the grid layout 
+#'   (\code{nx} by \code{ny} by \code{nsim}).
+#' @param decompose Logical; if `TRUE`, structural additive terms within Besag-York-Mollié 
+#'   (BYM) models are returned broken down into their individual spatial and non-spatial 
+#'   components. Defaults to `FALSE`.
+#' @param ... Unused arguments. Passed along for generic compatibility with 
+#'   \code{\link[stats]{simulate}}.
 #' 
 #' @details
-#' 
-#' To do.
+#' The simulation routine draws multivariate normal samples using a precision-based 
+#' Cholesky solver applied to the preconditioned Hessian matrix evaluated at the 
+#' maximum likelihood estimates. These coefficient variations are then mapped 
+#' through design matrices and inverse-link functions according to the target 
+#' extreme value family definitions.
 #' 
 #' @references 
-#' 
 #' Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 #' Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 #'
+#' @seealso \code{\link{evgmrf}}, \code{\link{predict.evgmrf}}
+#'
+#' @return A \code{list} or \code{array} of simulated paths structured according 
+#'   to the choice of \code{simplify2array} and \code{decompose}.
+#' 
 #' @examples
-#'
-#' # To follow
-#'
-#' @seealso \link{evgmrf} \link{predict.evgmrf}
-#'
-#' @return A \code{list} or \code{array}
+#' \dontrun{
+#' # Assuming a fitted model object 'm_gev' exists:
+#' sim_paths <- simulate(m_gev, nsim = 100, type = "response")
+#' }
 #' 
 #' @export
 simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob = NULL,

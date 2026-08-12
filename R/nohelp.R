@@ -26,19 +26,6 @@
   out        
 }
 
-.control.evgmrf <- function() {
-  out <- list(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-3, reml_direction = 'ad-hoc',
-       reml_steptol = 5e-3, reml_stepmax = 1, reml_itlim = 1e2, inner_optim = 'chol',
-       alpha.tol = 1e-6, grad_mult = 0, par_mult = .1, update = FALSE, 
-       openmp = FALSE, threads = 0, perturb.tol = 1e-2, perturb.mult = 5, 
-       perturb.method = 'chol', perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10,
-       cv_eps = 5e-2, cv_gradtol = .05, cv_steptol = 1e-4, super = FALSE,
-       sandwich = FALSE)
-  if (out$inner_optim == 'Cholesky' | out$perturb.method == 'Cholesky')
-    out$super <- TRUE
-  out
-}
-
 ## REML functions
 
 # .dst0 <- function(x, omega = 1, alpha = 0, nu = 10, log = FALSE) {

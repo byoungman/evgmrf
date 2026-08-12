@@ -29,7 +29,12 @@
 #'
 #' @examples
 #'
-#' # To follow
+#' data(COtop5prcp)
+#' COmxprcp <- COtop5prcp$prcp[, 1, , ]
+#' m_gev <- evgmrf(COmxprcp)
+#' plot(m_gev)
+#' plot(m_gev, type = 'response')
+#' plot(m_gev, prob = .99)
 #'
 #' @seealso \link{evgmrf} \link{predict.evgmrf}
 #'

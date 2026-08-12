@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate.R
 \name{simulate.evgmrf}
 \alias{simulate.evgmrf}
-\title{Simulations from a fitted \code{evgmrf} object.}
+\title{Simulations from a fitted \code{evgmrf} object}
 \usage{
 \method{simulate}{evgmrf}(
   object,
@@ -16,34 +16,55 @@
 )
 }
 \arguments{
-\item{object}{a fitted \code{evgmrf} object}
+\item{object}{A fitted \code{evgmrf} object.}
 
-\item{nsim}{to do}
+\item{nsim}{An integer specifying the number of simulation paths to generate.
+Defaults to \code{1}.}
 
-\item{seed}{an integer giving the seed for simulations}
+\item{seed}{An integer giving the seed for simulations, passed directly to
+\code{\link{set.seed}}. If \code{NULL}, the current random number generator state
+is preserved.}
 
-\item{type}{a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}}
+\item{type}{A character string giving the type of simulation sought. Supported
+options are \code{"link"} (the linear predictor scale) or \code{"response"}
+(the inverse-link parameter scale). If \code{prob} is supplied, this parameter
+is overridden to compute values on the quantile scale. Defaults to \code{"link"}.}
 
-\item{prob}{a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5}
+\item{prob}{A scalar or vector of probabilities mapping to quantiles to be
+estimated. If supplied, the simulations will evaluate predictions on the
+quantile scale. Defaults to \code{NULL}.}
 
-\item{simplify2array}{to do}
+\item{simplify2array}{Logical; if \code{TRUE} (the default), simulated paths are
+coerced and dropped into spatial arrays dimensioned to match the grid layout
+(\code{nx} by \code{ny} by \code{nsim}).}
 
-\item{decompose}{to do}
+\item{decompose}{Logical; if \code{TRUE}, structural additive terms within Besag-York-Mollié
+(BYM) models are returned broken down into their individual spatial and non-spatial
+components. Defaults to \code{FALSE}.}
 
-\item{...}{unused}
+\item{...}{Unused arguments. Passed along for generic compatibility with
+\code{\link[stats]{simulate}}.}
 }
 \value{
-A \code{list} or \code{array}
+A \code{list} or \code{array} of simulated paths structured according
+to the choice of \code{simplify2array} and \code{decompose}.
 }
 \description{
-Produces plots of parameters or quantiles from a \code{evgmrf} fit.
+Simulates parameters or quantiles from the posterior or predictive
+distribution of a fitted \code{evgmrf} model.
 }
 \details{
-To do.
+The simulation routine draws multivariate normal samples using a precision-based
+Cholesky solver applied to the preconditioned Hessian matrix evaluated at the
+maximum likelihood estimates. These coefficient variations are then mapped
+through design matrices and inverse-link functions according to the target
+extreme value family definitions.
 }
 \examples{
-
-# To follow
+\dontrun{
+# Assuming a fitted model object 'm_gev' exists:
+sim_paths <- simulate(m_gev, nsim = 100, type = "response")
+}
 
 }
 \references{
@@ -51,5 +72,5 @@ Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 }
 \seealso{
-\link{evgmrf} \link{predict.evgmrf}
+\code{\link{evgmrf}}, \code{\link{predict.evgmrf}}
 }

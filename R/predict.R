@@ -1,43 +1,82 @@
-#' Plots from a fitted \code{evgmrf} object.
+#' Predictions and standard errors from a fitted \code{evgmrf} object
 #'
-#' Produces plots of parameters or quantiles from a \code{evgmrf} fit.
+#' Obtains predicted values, extreme value quantiles, and associated standard 
+#' errors from a fitted Gaussian Markov random field spatial extremes model.
 #'
-#' @param object a fitted \code{evgmrf} object
-#' @param type a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}
-#' @param se.fit to do
-#' @param prob a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5
-#' @param index to do
-#' @param simplify2array to do
-#' @param xid to do
-#' @param yid to do
-#' @param loop to do
-#' @param progress to do
-#' @param chunksize to do
-#' @param se.method to do
-#' @param nsim to do
-#' @param decompose to do
-#' @param drop.parametric to do
-#' @param openmp to do
-#' @param threads to do
-#' @param ... unused
-#' @param sdif standard deviation inflation factor; defaults to 1
+#' @param object A fitted \code{evgmrf} object.
+#' @param type A character string specifying the prediction scale. Supported options 
+#'   are \code{"link"} (the linear predictor scale) or \code{"response"} 
+#'   (the inverse-link parameter scale). If \code{prob} is supplied, this is 
+#'   automatically overridden to evaluate on the quantile scale. Defaults to \code{"link"}.
+#' @param se.fit Logical; if `TRUE`, calculates associated standard errors for the 
+#'   predictions alongside point estimates. Defaults to `FALSE`.
+#' @param prob A scalar or vector of probabilities mapping to the target extreme value 
+#'   quantiles to be estimated. Defaults to `NULL`.
+#' @param index A matrix containing spatial row and column coordinate index maps 
+#'   used to reconstruct missing grid layouts. Defaults to \code{object$index}.
+#' @param simplify2array Logical; if `TRUE`, coerces and binds the underlying 
+#'   prediction surfaces into a single multidimensional array matrix. Defaults to `FALSE`.
+#' @param xid,yid Integer index vectors identifying localized grid subsets to extract. 
+#'   Defaults to the entire structural dimensions tracked in \code{object$xid} and \code{object$yid}.
+#' @param loop Logical; if `TRUE`, forces internal sparse solvers to iterate via 
+#'   memory-conserving blocks rather than loading full dense matrices. Defaults to `TRUE`.
+#' @param progress Logical; if `TRUE`, renders active text progress bars to the R console 
+#'   tracking standard error computation loops. Defaults to the value of \code{loop}.
+#' @param chunksize An integer determining the slice sizing processed concurrently 
+#'   per standard error iterative loop. Defaults to `100`.
+#' @param se.method A character string selecting the error propagation method. 
+#'   Supported options are \code{"direct"} (analytical delta method solving) or 
+#'   \code{"simulation"} (stochastic Monte Carlo sampling). Defaults to \code{"direct"}.
+#' @param nsim An integer tracking random sampling pathways drawn when evaluating 
+#'   stochastic errors under \code{se.method = "simulation"}. Defaults to `1000`.
+#' @param decompose Logical; if `TRUE`, random additive terms inside Besag-York-Mollié 
+#'   (BYM) formulations are broken down into individual spatial and random elements. 
+#'   Defaults to `FALSE`.
+#' @param drop.parametric Logical; if `TRUE` and \code{decompose = TRUE}, deletes 
+#'   fixed parametric background terms from the final evaluated list. Defaults to `FALSE`.
+#' @param sdif A numeric standard deviation inflation factor modifier scaled across 
+#'   the linear predictor error structures. Defaults to `1`.
+#' @param openmp Logical; switches whether analytical solvers exploit shared memory 
+#'   multi-core CPU parallelism extensions. Defaults to \code{object$control$openmp}.
+#' @param threads An integer controlling maximum system CPU threads allocated 
+#'   if \code{openmp = TRUE}. Defaults to \code{object$control$threads}.
+#' @param ... Unused auxiliary flags passed along for generic matching alignment with 
+#'   \code{\link[stats]{predict}}.
 #' 
 #' @details
-#' 
-#' To do.
+#' Analytical standard errors are solved using Cholesky factorizations of the preconditioned 
+#' Hessian matrix evaluated at the maximum likelihood convergence point. If Besag-York-Mollié 
+#' (BYM2) configurations are detected, structural projections adjust the scaling matrix properties 
+#' automatically. When calculating quantile-scale standard errors under \code{se.method = "direct"}, 
+#' the function calls analytical gradients attached as a functional derivative attribute to 
+#' \code{object$quantile0}.
 #' 
 #' @references 
-#' 
 #' Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 #' Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 #'
+#' @seealso \code{\link{evgmrf}}, \code{\link{simulate.evgmrf}}, \code{\link{family.evgmrf}}
+#'
+#' @return If \code{se.fit = FALSE}, the function returns a \code{list} or \code{array} of 
+#'   point predictions. If \code{se.fit = TRUE}, it returns a nested \code{list} containing:
+#'   \itemize{
+#'     \item \code{fitted}: The point predictions or quantiles mapped to the grid layout.
+#'     \item \code{se}: The associated standard errors matched element-for-element to the 
+#'       shapes inside \code{fitted}.
+#'   }
+#' 
 #' @examples
-#'
-#' # To follow
-#'
-#' @seealso \link{evgmrf} \link{predict.evgmrf}
-#'
-#' @return A \code{list} or \code{array}
+#' \dontrun{
+#' data(COtop5prcp)
+#' COmxprcp <- COtop5prcp$prcp[, 1, , ]
+#' m_gev <- evgmrf(COmxprcp)
+#' 
+#' # Evaluate location and scale predictions
+#' link_preds <- predict(m_gev, type = "link")
+#' 
+#' # Calculate point estimates and standard errors for the 95th percentile
+#' q_preds <- predict(m_gev, prob = 0.95, se.fit = TRUE, se.method = "direct")
+#' }
 #' 
 #' @export
 predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
@@ -54,7 +93,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
     type0 <- 'response'
   openmp <- object$likdata$openmp
   out <- .fitted_values(object$beta, object$likdata, decompose)
-  np <- nrow(out)#object$likdata$np0
+  np <- nrow(out)
   if (!object$holes) {
     out <- lapply(1:np, function(i) matrix(out[i, ], object$nx))
   } else {
@@ -70,26 +109,14 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       }
     }
   }
-  # if (type == 'response') {
-  #   for (i in 1:np) out[[i]] <- object$likfns$trans[[i]](out[[i]])
-  # }
   nms <- as.list(object$names[[type0]])
   if (decompose) {
     for (i in 1:length(nms))
       nms[[i]] <- paste(nms[[i]], object$par_type[[i]], sep = ': ')
-    # is.bym2 <- which(object$model %in% paste('bym', 2:4, sep = ''))
-    # if (length(is.bym2)) {
-    #   for (i in is.bym2)
-    #     nms[[i]] <- paste(nms[[i]], c('spatial', 'random'), sep = ': ')
-    # }
   }
   names(out) <- unlist(nms)
   if (decompose & drop.parametric)
     out <- out[unlist(object$par_type) != 'parametric']
-  # if (type != 'link' & decompose) {
-  #   if(any(paste('bym', 2:4, sep = '') %in% object$model))
-  #     out <- out[- grep('random', names(out))]
-  # }
   if (type %in% c('response', 'quantile')) {
     if (se.fit) {
       out0 <- out
@@ -102,8 +129,6 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
   out <- lapply(out, function(x) x[xid , yid, drop = FALSE])
   if (simplify2array) {
     out <- array(unlist(out), dim = c(dim(out[[1]]), length(out)))
-    # for (i in 1:object$np)
-    #   out[[i]] <- drop(array(lst[[i]], c(object$nx, object$ny, nsim)))
   }
   if (type != 'link' & decompose) {
     names(out) <- gsub(': spatial', '', names(out))
@@ -142,8 +167,6 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       D <- Matrix::Diagonal(nrow(H), 1 / sqrt(dH))
       H <- D %*% H %*% D
       cpH <- Matrix::Cholesky(H, super = object$likdata$control$super, LDL = FALSE)
-      # H <- .perturb(H, rnorm(nrow(H)), object$likdata$control$perturb.tol, object$likdata$control$perturb.mult)
-      # cpH <- attr(H, 'chol')
     }
     if (type %in% c('link', 'response')) {
       if (se.method == 'simulation') {
@@ -167,12 +190,6 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
           se <- dH * sqrt(Matrix::diag(t1))
         } else {
           se <- rep(NA, nv)
-        # for (j in 1:nv) {
-        #   ej <- Matrix::sparseVector(i = j, x = 1, length = nv)
-        #   v <- as.vector(Matrix::solve(object$cholprecondHessian, ej))
-        #   se[j] <- object$diagHessian[j] * sqrt(v[j])
-        #   if (progress) setTxtProgressBar(pb, j)
-        # }
           spl <- split(1:nv, c(0:(nv - 1)) %/% chunksize)
           for (j in 1:length(spl)) {
             ind <- spl[[j]]
@@ -226,13 +243,6 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
           J <- do.call(attr(object$quantile0, 'deriv'), out0)
           J <- dH * matrix(J, ncol = object$np)
           if (loop) {
-          # for (j in 1:object$n) {
-          #   ind <- ind0 + j
-          #   ej <- Matrix::sparseVector(i = ind, x = J[j, ], length = nv)
-          #   temp <- Matrix::solve(object$cholprecondHessian, ej)[ind]
-          #   sek[j] <- sqrt(sum(ej[ind] * temp))
-          #   if (progress) setTxtProgressBar(pb, j)
-          # }
             spl <- split(1:object$n, c(0:(object$n - 1)) %/% chunksize)
             for (j in 1:length(spl)) {
               ind <- spl[[j]]

@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{predict.evgmrf}
 \alias{predict.evgmrf}
-\title{Plots from a fitted \code{evgmrf} object.}
+\title{Predictions and standard errors from a fitted \code{evgmrf} object}
 \usage{
 \method{predict}{evgmrf}(
   object,
@@ -27,56 +27,96 @@
 )
 }
 \arguments{
-\item{object}{a fitted \code{evgmrf} object}
+\item{object}{A fitted \code{evgmrf} object.}
 
-\item{type}{a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}}
+\item{type}{A character string specifying the prediction scale. Supported options
+are \code{"link"} (the linear predictor scale) or \code{"response"}
+(the inverse-link parameter scale). If \code{prob} is supplied, this is
+automatically overridden to evaluate on the quantile scale. Defaults to \code{"link"}.}
 
-\item{se.fit}{to do}
+\item{se.fit}{Logical; if \code{TRUE}, calculates associated standard errors for the
+predictions alongside point estimates. Defaults to \code{FALSE}.}
 
-\item{prob}{a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5}
+\item{prob}{A scalar or vector of probabilities mapping to the target extreme value
+quantiles to be estimated. Defaults to \code{NULL}.}
 
-\item{index}{to do}
+\item{index}{A matrix containing spatial row and column coordinate index maps
+used to reconstruct missing grid layouts. Defaults to \code{object$index}.}
 
-\item{simplify2array}{to do}
+\item{simplify2array}{Logical; if \code{TRUE}, coerces and binds the underlying
+prediction surfaces into a single multidimensional array matrix. Defaults to \code{FALSE}.}
 
-\item{xid}{to do}
+\item{xid, yid}{Integer index vectors identifying localized grid subsets to extract.
+Defaults to the entire structural dimensions tracked in \code{object$xid} and \code{object$yid}.}
 
-\item{yid}{to do}
+\item{loop}{Logical; if \code{TRUE}, forces internal sparse solvers to iterate via
+memory-conserving blocks rather than loading full dense matrices. Defaults to \code{TRUE}.}
 
-\item{loop}{to do}
+\item{progress}{Logical; if \code{TRUE}, renders active text progress bars to the R console
+tracking standard error computation loops. Defaults to the value of \code{loop}.}
 
-\item{progress}{to do}
+\item{chunksize}{An integer determining the slice sizing processed concurrently
+per standard error iterative loop. Defaults to \code{100}.}
 
-\item{chunksize}{to do}
+\item{se.method}{A character string selecting the error propagation method.
+Supported options are \code{"direct"} (analytical delta method solving) or
+\code{"simulation"} (stochastic Monte Carlo sampling). Defaults to \code{"direct"}.}
 
-\item{se.method}{to do}
+\item{nsim}{An integer tracking random sampling pathways drawn when evaluating
+stochastic errors under \code{se.method = "simulation"}. Defaults to \code{1000}.}
 
-\item{nsim}{to do}
+\item{decompose}{Logical; if \code{TRUE}, random additive terms inside Besag-York-Mollié
+(BYM) formulations are broken down into individual spatial and random elements.
+Defaults to \code{FALSE}.}
 
-\item{decompose}{to do}
+\item{drop.parametric}{Logical; if \code{TRUE} and \code{decompose = TRUE}, deletes
+fixed parametric background terms from the final evaluated list. Defaults to \code{FALSE}.}
 
-\item{drop.parametric}{to do}
+\item{sdif}{A numeric standard deviation inflation factor modifier scaled across
+the linear predictor error structures. Defaults to \code{1}.}
 
-\item{sdif}{standard deviation inflation factor; defaults to 1}
+\item{openmp}{Logical; switches whether analytical solvers exploit shared memory
+multi-core CPU parallelism extensions. Defaults to \code{object$control$openmp}.}
 
-\item{openmp}{to do}
+\item{threads}{An integer controlling maximum system CPU threads allocated
+if \code{openmp = TRUE}. Defaults to \code{object$control$threads}.}
 
-\item{threads}{to do}
-
-\item{...}{unused}
+\item{...}{Unused auxiliary flags passed along for generic matching alignment with
+\code{\link[stats]{predict}}.}
 }
 \value{
-A \code{list} or \code{array}
+If \code{se.fit = FALSE}, the function returns a \code{list} or \code{array} of
+point predictions. If \code{se.fit = TRUE}, it returns a nested \code{list} containing:
+\itemize{
+\item \code{fitted}: The point predictions or quantiles mapped to the grid layout.
+\item \code{se}: The associated standard errors matched element-for-element to the
+shapes inside \code{fitted}.
+}
 }
 \description{
-Produces plots of parameters or quantiles from a \code{evgmrf} fit.
+Obtains predicted values, extreme value quantiles, and associated standard
+errors from a fitted Gaussian Markov random field spatial extremes model.
 }
 \details{
-To do.
+Analytical standard errors are solved using Cholesky factorizations of the preconditioned
+Hessian matrix evaluated at the maximum likelihood convergence point. If Besag-York-Mollié
+(BYM2) configurations are detected, structural projections adjust the scaling matrix properties
+automatically. When calculating quantile-scale standard errors under \code{se.method = "direct"},
+the function calls analytical gradients attached as a functional derivative attribute to
+\code{object$quantile0}.
 }
 \examples{
+\dontrun{
+data(COtop5prcp)
+COmxprcp <- COtop5prcp$prcp[, 1, , ]
+m_gev <- evgmrf(COmxprcp)
 
-# To follow
+# Evaluate location and scale predictions
+link_preds <- predict(m_gev, type = "link")
+
+# Calculate point estimates and standard errors for the 95th percentile
+q_preds <- predict(m_gev, prob = 0.95, se.fit = TRUE, se.method = "direct")
+}
 
 }
 \references{
@@ -84,5 +124,5 @@ Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 }
 \seealso{
-\link{evgmrf} \link{predict.evgmrf}
+\code{\link{evgmrf}}, \code{\link{simulate.evgmrf}}, \code{\link{family.evgmrf}}
 }

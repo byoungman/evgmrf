@@ -2,23 +2,20 @@
 % Please edit documentation in R/evgmrf.R
 \name{evgmrf}
 \alias{evgmrf}
-\title{Fitting extreme value distributions with parameters that vary according to Gaussian Markov random fields.}
+\title{Fitting extreme value distributions with parameters that vary according to Gaussian Markov random fields}
 \usage{
 evgmrf(
   z,
+  family = "gev",
   formula = ~-1,
   covariates,
-  family = "gev",
   weights = 1,
   inits = "different",
-  model = "ICAR",
+  model = "icar",
   W = NULL,
-  rho0 = 1,
   order = 1,
   lambda0,
   alpha = NA,
-  pp_nper,
-  rank = -1,
   args = list(),
   control = list(),
   trace = 0,
@@ -29,77 +26,97 @@ evgmrf(
   index = NULL,
   infill = FALSE,
   cv = FALSE,
-  inits.method = "reml",
   auto.weights = FALSE,
   bymfns = NULL
 )
 }
 \arguments{
-\item{z}{an array, or matrix if W supplied, or array if W supplied and r-largest}
+\item{z}{An array or matrix containing the response data. If \code{W} is supplied,
+a matrix is expected. If an $r$-largest family is chosen, an array must be provided.}
 
-\item{formula}{to do}
+\item{family}{A character string specifying the extreme value error distribution.
+See \code{\link{family.evgmrf}} for details on supported families and required
+data formats. Defaults to \code{"gev"}.}
 
-\item{covariates}{to do}
+\item{formula}{A \code{formula} or \code{list} of \code{formula}s for any fixed effects.
+Defaults to \code{ ~ -1}, which means intercept- and fixed-effect-free forms.}
 
-\item{family}{to do}
+\item{covariates}{A \code{list} of covariate with names matching those in \code{formula}
+and dimensions compatible with \code{z}.}
 
-\item{weights}{to do}
+\item{weights}{An array or matrix or scalar of weights for each value in \code{z}.
+Defaults to \code{1}.}
 
-\item{inits}{to do}
+\item{inits}{A character string specifying how initial parameter values should
+be chosen: \code{"different"} (Default) uses different values for each points
+based on point-wise optima; \code{"same"} uses the same values.}
 
-\item{model}{to do}
+\item{model}{A character string specifying the GMRF structural framework. See
+\code{\link{model.evgmrf}}. Defaults to \code{"icar"}.}
 
-\item{W}{adjacency matrix}
+\item{W}{An optional square adjacency matrix defining the spatial neighbor relationships.}
 
-\item{rho0}{to do}
+\item{order}{A scalar or vector specifying autoregressive order. See
+\code{\link{model.evgmrf}}. Defaults to \code{1}.}
 
-\item{order}{to do}
+\item{lambda0}{A scalar or vector of initial smoothing parameter values. Defaults
+to \code{1}. Larger values give smoother starting points.}
 
-\item{lambda0}{(log of) initial smoothing parameter values; repeated if necessary}
+\item{alpha}{Fixed variance ratios for 2+-order autoregressive forms. See
+\code{\link{model.evgmrf}}.}
 
-\item{alpha}{to do}
+\item{args}{A \code{list} or arguments required to calculations. See
+\code{\link{family.evgmrf}}.}
 
-\item{pp_nper}{to do}
+\item{control}{A \code{list} of control parameters. See \code{\link{evgmrf.control}}.}
 
-\item{rank}{to do}
+\item{trace}{An integer specifying the verbosity level of the optimization output.
+Larger values provide more comprehensive iterations. Defaults to \code{0} (silent).}
 
-\item{args}{to do}
+\item{outer}{A character string specifying the smoothing parameter optimizer.
+One of \code{"newton"}, \code{"nelder-mead"}, or \code{"bfgs"} (Default).}
 
-\item{control}{to do}
+\item{gamma}{A scalar multiplier applied directly to the log-likelihood function
+representing localized constant weights; defaults to \code{1}.}
 
-\item{trace}{an integer for the level of fitting detail to report. Larger values give more detail. Defaults to 0 (none)}
+\item{nx, ny}{Integers giving numbers of rows and columns in grid; see Details.}
 
-\item{outer}{to do}
+\item{index}{A two-column \code{matrix} of integers identifying row and column
+positions; see Details.}
 
-\item{gamma}{a scalar that multiplies the log-likelihood (similarly to a constant weights); defaults to 1}
+\item{infill}{Logical; if \code{TRUE}, missing values within grid holes are imputed
+during structural inference. Requires \code{index} to be provided.}
 
-\item{nx, ny}{grid dimensions, if not deducible from z}
+\item{cv}{Logical; if \code{TRUE}, cross-validation is used instead of REML
+for smoothing parameter estimation. See \code{\link{evgmrf.control}} for
+details of its parameters. EXPERIMENTAL. Defaults to \code{FALSE}.}
 
-\item{index}{a matrix of row and column indices, to define grid-based data}
+\item{auto.weights}{Logical; if \code{TRUE}, weights are automatically calculated
+using an effective sample size estimate. EXPERIMENTAL. Defaults to \code{FALSE}.}
 
-\item{infill}{infill grid holes values during inference?}
-
-\item{cv}{use cross-validation mode?}
-
-\item{inits.method}{to do}
-
-\item{auto.weights}{to do}
-
-\item{bymfns}{to do}
+\item{bymfns}{A \code{list} of functions if model is \code{"bym3"} or
+\code{"bym4"}. See \code{\link{model.evgmrf}}.}
 }
 \value{
-An object of class \code{evgmrf}
+An object of class \code{evgmrf} containing localized parameter arrays
+and structural optimization summaries.
 }
 \description{
-Function \code{evgmrf} fits extreme value distributions with one or more parameters
-varying with Gaussian Markov random field form.
+Fits extreme value distributions where one or more parameters vary across space or
+structures using a Gaussian Markov random field (GMRF) framework.
 }
 \details{
-To do.
+In general the last two dimensions of \code{z} will define the grid size in terms
+if rows and columns; otherwise it is \code{compacted}. If \code{z} is compacted
+\code{index} or \code{nx} and \code{ny} can be used to supply grid details, and
+\code{z} will be a \code{matrix} or a 3-dimensional \code{array} if
+\code{family == "rlarge"}.
 }
 \examples{
 
-# To follow
+data(COtop5prcp)
+COmxprcp <- COtop5prcp$prcp[, 1, , ]
+m_gev <- evgmrf(COmxprcp, family = "gev")
 
 }
 \references{
@@ -107,5 +124,5 @@ Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 }
 \seealso{
-\link{predict.evgmrf}
+\code{\link{predict.evgmrf}}, \code{\link{COtop5prcp}}
 }

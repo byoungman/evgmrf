@@ -1,77 +1,104 @@
-#' Fitting extreme value distributions with parameters that vary according to Gaussian Markov random fields.
+#' Fitting extreme value distributions with parameters that vary according to Gaussian Markov random fields
 #'
-#' Function \code{evgmrf} fits extreme value distributions with one or more parameters
-#' varying with Gaussian Markov random field form.
+#' Fits extreme value distributions where one or more parameters vary across space or 
+#' structures using a Gaussian Markov random field (GMRF) framework.
 #'
-#' @param z an array, or matrix if W supplied, or array if W supplied and r-largest
-#' @param formula to do
-#' @param covariates to do
-#' @param family to do
-#' @param weights to do
-#' @param inits to do
-#' @param model to do
-#' @param W adjacency matrix
-#' @param rho0 to do
-#' @param alpha to do
-#' @param order to do
-#' @param lambda0 (log of) initial smoothing parameter values; repeated if necessary
-#' @param pp_nper to do
-#' @param rank to do
-#' @param args to do
-#' @param control to do
-#' @param trace an integer for the level of fitting detail to report. Larger values give more detail. Defaults to 0 (none)
-#' @param outer to do
-#' @param gamma a scalar that multiplies the log-likelihood (similarly to a constant weights); defaults to 1
-#' @param nx,ny grid dimensions, if not deducible from z
-#' @param index a matrix of row and column indices, to define grid-based data
-#' @param infill infill grid holes values during inference?
-#' @param cv use cross-validation mode?
-#' @param inits.method to do
-#' @param auto.weights to do
-#' @param bymfns to do
+#' @param z An array or matrix containing the response data. If `W` is supplied, 
+#'   a matrix is expected. If an $r$-largest family is chosen, an array must be provided.
+#' @param family A character string specifying the extreme value error distribution. 
+#'   See \code{\link{family.evgmrf}} for details on supported families and required 
+#'   data formats. Defaults to \code{"gev"}.
+#' @param model A character string specifying the GMRF structural framework. See
+#'   \code{\link{model.evgmrf}}. Defaults to \code{"icar"}.
+#' @param W An optional square adjacency matrix defining the spatial neighbor relationships.
+#' @param trace An integer specifying the verbosity level of the optimization output. 
+#'   Larger values provide more comprehensive iterations. Defaults to `0` (silent).
+#' @param gamma A scalar multiplier applied directly to the log-likelihood function 
+#'   representing localized constant weights; defaults to `1`.
+#' @param infill Logical; if `TRUE`, missing values within grid holes are imputed 
+#'   during structural inference. Requires \code{index} to be provided.
+#' @param index A two-column \code{matrix} of integers identifying row and column
+#'   positions; see Details.
+#' @param formula A \code{formula} or \code{list} of \code{formula}s for any fixed effects. 
+#'   Defaults to ` ~ -1`, which means intercept- and fixed-effect-free forms.
+#' @param covariates A \code{list} of covariate with names matching those in \code{formula}
+#'   and dimensions compatible with \code{z}.
+#' @param weights An array or matrix or scalar of weights for each value in `z`. 
+#'   Defaults to `1`.
+#' @param inits A character string specifying how initial parameter values should
+#'   be chosen: \code{"different"} (Default) uses different values for each points
+#'   based on point-wise optima; \code{"same"} uses the same values.
+#' @param lambda0 A scalar or vector of initial smoothing parameter values. Defaults
+#'   to `1`. Larger values give smoother starting points.
+#' @param order A scalar or vector specifying autoregressive order. See 
+#'   \code{\link{model.evgmrf}}. Defaults to `1`.
+#' @param nx,ny Integers giving numbers of rows and columns in grid; see Details.
+#' @param bymfns A \code{list} of functions if model is \code{"bym3"} or 
+#'   \code{"bym4"}. See \code{\link{model.evgmrf}}.
+#' @param args A \code{list} or arguments required to calculations. See 
+#'   \code{\link{family.evgmrf}}.
+#' @param control A \code{list} of control parameters. See \code{\link{evgmrf.control}}.
+#' @param outer A character string specifying the smoothing parameter optimizer.
+#'   One of \code{"newton"}, \code{"nelder-mead"}, or \code{"bfgs"} (Default).
+#' @param auto.weights Logical; if \code{TRUE}, weights are automatically calculated
+#'   using an effective sample size estimate. EXPERIMENTAL. Defaults to \code{FALSE}.
+#' @param cv Logical; if \code{TRUE}, cross-validation is used instead of REML
+#'   for smoothing parameter estimation. See \code{\link{evgmrf.control}} for
+#'   details of its parameters. EXPERIMENTAL. Defaults to \code{FALSE}.
+#' @param alpha Fixed variance ratios for 2+-order autoregressive forms. See 
+#'   \code{\link{model.evgmrf}}.
 #' 
-#' @details
-#' 
-#' To do.
+#' @details 
+#' In general the last two dimensions of \code{z} will define the grid size in terms
+#' if rows and columns; otherwise it is `compacted`. If \code{z} is compacted 
+#' \code{index} or \code{nx} and \code{ny} can be used to supply grid details, and 
+#' \code{z} will be a \code{matrix} or a 3-dimensional \code{array} if 
+#' \code{family == "rlarge"}.
+#'
+#' @return An object of class \code{evgmrf} containing localized parameter arrays 
+#'   and structural optimization summaries.
 #' 
 #' @references 
-#' 
 #' Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 #' Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 #'
+#' @seealso \code{\link{predict.evgmrf}}, \code{\link{COtop5prcp}}
+#'
 #' @examples
-#'
-#' # To follow
-#'
-#' @seealso \link{predict.evgmrf}
-#'
-#' @return An object of class \code{evgmrf}
+#' 
+#' data(COtop5prcp)
+#' COmxprcp <- COtop5prcp$prcp[, 1, , ]
+#' m_gev <- evgmrf(COmxprcp, family = "gev")
 #' 
 #' @export
-#' 
-evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, inits = 'different',
-                   model = 'ICAR', W = NULL, rho0 = 1, order = 1, lambda0, # GMRF -1 assumes GMRF for each par
+evgmrf <- function(z, 
+                   family = 'gev', 
+                   formula = ~ -1, 
+                   covariates, 
+                   weights = 1, 
+                   inits = 'different',
+                   model = 'icar', 
+                   W = NULL, 
+                   order = 1, 
+                   lambda0,
                    alpha = NA,
-                   pp_nper,                    # point process
-                   rank = -1,
-                   args = list(),             # eigen rank 
-                   control = list(), # some control parameters for testing
+                   args = list(),
+                   control = list(),
                    trace = 0,
                    outer = 'newton',
                    gamma = 1,
                    nx = NULL, ny = NULL, index = NULL, infill = FALSE,
                    cv = FALSE, 
-                   inits.method = 'reml',
                    auto.weights = FALSE,
                    bymfns = NULL
 ) {
   model <- tolower(model)
   args <- replace(.args0, names(args), args)
-  if (family == 'pproc') {
+  if (family == 'poisproc') {
     z <- array(z, c(1, dim(z)))
   }
   w <- 0 * z + weights
-  control <- replace(.control.evgmrf(), names(control), control)
+  control <- replace(evgmrf.control(), names(control), control)
   .checks(model, order)
   # some basics
   dz <- dim(z)
@@ -135,12 +162,12 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
       wl <- lapply(1:n, function(i) wm[, i])
     }
   }
-  if (family == 'pp') {
+  if (family == 'poisgpd') {
     wl <- lapply(seq_along(zl), function(i) wl[[i]][order(zl[[i]], decreasing = TRUE, na.last = NA)])
     zl <- lapply(seq_along(zl), function(i) zl[[i]][order(zl[[i]], decreasing = TRUE, na.last = NA)])
     if (is.null(args$u)) {
       if (is.null(args$r)) {
-        stop("Supply either args$r or args$u for family = 'pp'.")
+        stop("Supply either args$r or args$u for family = 'poisgpd'.")
       } else {
         args$u <- sapply(zl, function(x) x[args$r])
       }
@@ -165,7 +192,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
       p0m <- t(sapply(zl, .quick_tgpd))
     }
   }
-  if (family == 'pp') {
+  if (family == 'poisgpd') {
     .lf <- .pp_fns
     .ld$m <- args$nper
     .ld$np <- 3
@@ -405,7 +432,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   #   p0v <- p0v$par
   #   # print(.ld$w)
   # }
-  if ('diag' %in% inits.method)
+  if (control$refine.inits)
      p0v <- .newton_diag(.d0_Q, .d1_Q, .d2_Q_diag, p0v, max_iter=1e4, likdata = .ld, likfns = .lf, Q = .mQ(lambda0, Qd0))
   # p0v <- .beta0(rho0, Qd0, .ld, .lf, .mQ, control$it0)$par
   attr(lambda0, 'beta') <- p0v
