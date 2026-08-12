@@ -8,6 +8,7 @@
 #' @param type a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}
 #' @param prob a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5
 #' @param simplify2array to do
+#' @param decompose to do
 #' @param ... unused
 #' 
 #' @details

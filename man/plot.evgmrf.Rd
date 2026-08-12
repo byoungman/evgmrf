@@ -49,6 +49,8 @@
 
 \item{drop.parametric}{to do}
 
+\item{layout}{to do}
+
 \item{...}{arguments passed to \code{lattice::levelplot}}
 }
 \value{

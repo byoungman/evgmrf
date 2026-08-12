@@ -16,8 +16,6 @@
 #' @param order to do
 #' @param lambda0 (log of) initial smoothing parameter values; repeated if necessary
 #' @param pp_nper to do
-#' @param C to do
-#' @param tau to do
 #' @param rank to do
 #' @param args to do
 #' @param control to do
@@ -30,6 +28,7 @@
 #' @param cv use cross-validation mode?
 #' @param inits.method to do
 #' @param auto.weights to do
+#' @param bymfns to do
 #' 
 #' @details
 #' 

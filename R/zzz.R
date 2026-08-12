@@ -188,8 +188,8 @@
     if (model == 'bym2') {
       lkappa <- pars['lambda']
       kappa <- exp(lkappa)
-      lrho <- pnorm(pars['rho'], log = TRUE)
-      l1mrho <- pnorm(pars['rho'], log = TRUE, lower.tail = FALSE)
+      lrho <- pnorm(pars['rho'], log.p = TRUE)
+      l1mrho <- pnorm(pars['rho'], log.p = TRUE, lower.tail = FALSE)
       # rho <- exp(lrho)
       rhoc <- pnorm(pars['rho'], lower.tail = FALSE)
       # p1 <- rho * tau#tau / rho

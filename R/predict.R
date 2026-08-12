@@ -17,6 +17,8 @@
 #' @param nsim to do
 #' @param decompose to do
 #' @param drop.parametric to do
+#' @param openmp to do
+#' @param threads to do
 #' @param ... unused
 #' @param sdif standard deviation inflation factor; defaults to 1
 #' 

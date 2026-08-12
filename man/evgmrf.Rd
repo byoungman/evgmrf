@@ -85,9 +85,7 @@ evgmrf(
 
 \item{auto.weights}{to do}
 
-\item{C}{to do}
-
-\item{tau}{to do}
+\item{bymfns}{to do}
 }
 \value{
 An object of class \code{evgmrf}

@@ -17,10 +17,10 @@ array (\code{prcp}) of daily precipitation amounts above 20mm for 56 years
 }
 \examples{
 
-library(egmrf)
+library(evgmrf)
 data(COprcp20)
 
-COprcp20$z <- colMeans(COprcp20$prcp, dims = 2)
+COprcp20$z <- colMeans(COprcp20$prcp, na.rm = TRUE)
 image(COprcp20)
 
 }

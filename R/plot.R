@@ -15,6 +15,7 @@
 #' @param nrc to do
 #' @param decompose to do
 #' @param drop.parametric to do
+#' @param layout to do
 #' @param ... arguments passed to \code{lattice::levelplot}
 #' 
 #' @details

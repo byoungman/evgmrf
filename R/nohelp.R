@@ -41,98 +41,98 @@
 
 ## REML functions
 
-.dst0 <- function(x, omega = 1, alpha = 0, nu = 10, log = FALSE) {
-  delta <- alpha / sqrt(1 + alpha^2)
-  b_nu <- sqrt(nu / pi) * gamma((nu - 1) / 2) / gamma(nu / 2)
-  xi <- -omega * b_nu * delta  # shift so mean = 0
-  sn::dst(x, xi = xi, omega = omega, alpha = alpha, nu = nu, log = log)
-}
-
-.dmixexp0 <- function(x, p = 0.5, rate = 1, log = FALSE) {
-  if (p < 0 || p > 1) stop("p must be between 0 and 1")
-  if (rate <= 0) stop("rate must be positive")
-  
-  dens <- numeric(length(x))
-  dens[x == 0] <- 1 - p
-  dens[x > 0] <- p * rate * exp(-rate * x[x > 0])
-  dens[x < 0] <- 0
-  
-  if (log) dens <- log(dens)
-  
-  return(dens)
-}
-
-.dmixexpnorm <- function(x, p = 0.5, rate = 1, sd = 1, log = FALSE) {
-  if (p < 0 || p > 1) stop("p must be between 0 and 1")
-  if (rate <= 0) stop("rate must be positive")
-  if (sd <= 0) stop("sd must be positive")
-  
-  # Exponential pdf (only for x >= 0)
-  f_exp <- ifelse(x >= 0, rate * exp(-rate * x), 0)
-  
-  # Normal pdf (symmetric, defined everywhere)
-  f_norm <- dnorm(x, mean = 0, sd = sd)
-  
-  # Mixture
-  dens <- p * f_exp + (1 - p) * f_norm
-  
-  if (log) dens <- log(dens)
-  return(dens)
-}
-
-.temp <- function(x, s = .1) {
-  ifelse (x <= 2 * s, 
-          dnorm(x, mean = 0, sd = s), 
-          (1 - pnorm(2)) * dunif(x, 2 * s, 4))
-}
-
-.temp <- function(x) exp(-1/x) / (x * x)
-
-.dtest <- function(x, p = 0.95, sd = 1, s = 1, log = FALSE) {
-  # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dbeta(x / 4, 1.1, 1.1)
-  # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dnorm(x, 2, 2)
-  # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dnorm(x, 0, 20)
-  # dens <- .temp(x, s)
-  # dens <- p * dnorm(x, mean = 0, sd = .1) + (1 - p) * dnorm(x, mean = 0, sd = .15)
-  dens <- dcauchy(x, location = 0, scale = .1)
-  # dens <- dnorm(x, mean = 0, sd = .1)
-  if (log) dens <- log(dens)
-  return(dens)
-}
-
-.d2unif <- function(x, p = 0.95, log = FALSE) {
-  dens <- p * dunif(x, -0.1, 0.1) + (1 - p) * dexp(x)
-  if (log) dens <- log(dens)
-  return(dens)
-}
-
-dstudent <- function(x, df, mean = 0, scale = 1, log = FALSE) {
-  z <- (x - mean) / scale
-  if (log)
-    dt(z, df, log = TRUE) - log(scale)
-  else
-    dt(z, df) / scale
-}
-
-dsech <- function(x, location = 0, scale = 1, log = FALSE) {
-  if (scale <= 0) stop("scale must be positive")
-  z <- (x - location) / scale
-  logdens <- -log(2 * scale) - log(cosh(pi * z / 2))
-  if (log) logdens else exp(logdens)
-}
-
-# Exponentially Modified Gaussian (EMG) PDF
-dEMG <- function(y, mu = 0, sigma = 1, lambda = 1, log = FALSE) {
-  u <- (mu + lambda * sigma^2 - y) / (sqrt(2) * sigma)
-  
-  # Compute log density for numerical stability
-  log_pdf <- log(lambda) - log(2) +
-    .5 * lambda * (2 * mu + lambda * sigma^2 - 2 * y) + pnorm(-u * sqrt(2), log = TRUE)
-    # log(pnorm(-u * sqrt(2)))  # since erfc(x) = 2 * pnorm(-x * sqrt(2))
-
-  if (log) return(log_pdf)
-  else return(exp(log_pdf))
-}
+# .dst0 <- function(x, omega = 1, alpha = 0, nu = 10, log = FALSE) {
+#   delta <- alpha / sqrt(1 + alpha^2)
+#   b_nu <- sqrt(nu / pi) * gamma((nu - 1) / 2) / gamma(nu / 2)
+#   xi <- -omega * b_nu * delta  # shift so mean = 0
+#   sn::dst(x, xi = xi, omega = omega, alpha = alpha, nu = nu, log = log)
+# }
+# 
+# .dmixexp0 <- function(x, p = 0.5, rate = 1, log = FALSE) {
+#   if (p < 0 || p > 1) stop("p must be between 0 and 1")
+#   if (rate <= 0) stop("rate must be positive")
+#   
+#   dens <- numeric(length(x))
+#   dens[x == 0] <- 1 - p
+#   dens[x > 0] <- p * rate * exp(-rate * x[x > 0])
+#   dens[x < 0] <- 0
+#   
+#   if (log) dens <- log(dens)
+#   
+#   return(dens)
+# }
+# 
+# .dmixexpnorm <- function(x, p = 0.5, rate = 1, sd = 1, log = FALSE) {
+#   if (p < 0 || p > 1) stop("p must be between 0 and 1")
+#   if (rate <= 0) stop("rate must be positive")
+#   if (sd <= 0) stop("sd must be positive")
+#   
+#   # Exponential pdf (only for x >= 0)
+#   f_exp <- ifelse(x >= 0, rate * exp(-rate * x), 0)
+#   
+#   # Normal pdf (symmetric, defined everywhere)
+#   f_norm <- dnorm(x, mean = 0, sd = sd)
+#   
+#   # Mixture
+#   dens <- p * f_exp + (1 - p) * f_norm
+#   
+#   if (log) dens <- log(dens)
+#   return(dens)
+# }
+# 
+# .temp <- function(x, s = .1) {
+#   ifelse (x <= 2 * s, 
+#           dnorm(x, mean = 0, sd = s), 
+#           (1 - pnorm(2)) * dunif(x, 2 * s, 4))
+# }
+# 
+# .temp <- function(x) exp(-1/x) / (x * x)
+# 
+# .dtest <- function(x, p = 0.95, sd = 1, s = 1, log = FALSE) {
+#   # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dbeta(x / 4, 1.1, 1.1)
+#   # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dnorm(x, 2, 2)
+#   # dens <- p * dnorm(x, mean = 0, sd = s) + (1 - p) * dnorm(x, 0, 20)
+#   # dens <- .temp(x, s)
+#   # dens <- p * dnorm(x, mean = 0, sd = .1) + (1 - p) * dnorm(x, mean = 0, sd = .15)
+#   dens <- dcauchy(x, location = 0, scale = .1)
+#   # dens <- dnorm(x, mean = 0, sd = .1)
+#   if (log) dens <- log(dens)
+#   return(dens)
+# }
+# 
+# .d2unif <- function(x, p = 0.95, log = FALSE) {
+#   dens <- p * dunif(x, -0.1, 0.1) + (1 - p) * dexp(x)
+#   if (log) dens <- log(dens)
+#   return(dens)
+# }
+# 
+# dstudent <- function(x, df, mean = 0, scale = 1, log = FALSE) {
+#   z <- (x - mean) / scale
+#   if (log)
+#     dt(z, df, log = TRUE) - log(scale)
+#   else
+#     dt(z, df) / scale
+# }
+# 
+# dsech <- function(x, location = 0, scale = 1, log = FALSE) {
+#   if (scale <= 0) stop("scale must be positive")
+#   z <- (x - location) / scale
+#   logdens <- -log(2 * scale) - log(cosh(pi * z / 2))
+#   if (log) logdens else exp(logdens)
+# }
+# 
+# # Exponentially Modified Gaussian (EMG) PDF
+# dEMG <- function(y, mu = 0, sigma = 1, lambda = 1, log = FALSE) {
+#   u <- (mu + lambda * sigma^2 - y) / (sqrt(2) * sigma)
+#   
+#   # Compute log density for numerical stability
+#   log_pdf <- log(lambda) - log(2) +
+#     .5 * lambda * (2 * mu + lambda * sigma^2 - 2 * y) + pnorm(-u * sqrt(2), log = TRUE)
+#     # log(pnorm(-u * sqrt(2)))  # since erfc(x) = 2 * pnorm(-x * sqrt(2))
+# 
+#   if (log) return(log_pdf)
+#   else return(exp(log_pdf))
+# }
 
 # Function to calculate the PDF of the Normal Inverse Gaussian distribution
 # Parameters:
@@ -143,66 +143,66 @@ dEMG <- function(y, mu = 0, sigma = 1, lambda = 1, log = FALSE) {
 # mu: Location parameter.
 # log: Logical; if TRUE, log-density is returned.
 
-dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
-  
-  # Ensure constraints are met (alpha > 0, delta > 0, |beta| < alpha)
-  if (alpha <= 0 || delta <= 0 || any(abs(beta) >= alpha)) {
-    stop("Parameters must satisfy: alpha > 0, delta > 0, and |beta| < alpha.")
-  }
-  
-  # Pre-calculate common terms
-  gamma <- sqrt(alpha^2 - beta^2)
-  z <- x - mu
-  
-  # Calculate K_1 (Modified Bessel function of the third kind, order 1)
-  # R uses 'besselK(x, nu)' where nu is the order.
-  bessel_term <- besselK(alpha * sqrt(delta^2 + z^2), 1)
-  
-  # Calculate the NIG density f(x)
-  # The formula is: f(x) = (alpha * delta / pi) * K_1(alpha * sqrt(delta^2 + z^2)) * #                     * exp(delta * gamma + beta * z) / sqrt(delta^2 + z^2)
-  
-  # Term 1: The constant part
-  constant_term <- (alpha * delta / pi) * exp(delta * gamma)
-  
-  # Term 2: The variable part
-  variable_term <- bessel_term * exp(beta * z) / sqrt(delta^2 + z^2)
-  
-  # Full density
-  density <- constant_term * variable_term
-  
-  # Handle log argument
-  if (log) {
-    return(log(density))
-  } else {
-    return(density)
-  }
-}
-
-.nldfrech <- function(x, s = 1, lambda = 1) {
-  # x <- abs(x)
-  # return(-dexp(x, rate = 1 / s, log = TRUE))
-  # return(-dnorm(x, 0, s, log = TRUE))
-  # return(-dcauchy(x, 0, s, log = TRUE))
-  # return(-sn::dst(x,  xi = 0, omega = 1, alpha = 5, nu = 5, log = TRUE))
-  # return(-.dst0(x, omega = s, alpha = 5, nu = 5, log = TRUE))
-  # return(-.dmixexpnorm(x, p = 0.5, rate = s, sd = .01, log = TRUE))
-  alpha <- 100
-  beta <- sqrt(alpha^2 - 1)
-  mu <- -s#- s * beta / sqrt(alpha * alpha - beta * beta)
-  return(-log(dnig(x, alpha, beta, s, mu)))
-  return(-log(.9 * dnorm(x, 0, s) * .1 * dgamma(x, shape = 2)))
-  return(-dEMG(x, 0, s, lambda, log = TRUE))
-  return(-dsech(x, 0, .5, log = TRUE))
-  return(-dstudent(x, 1, 0, .5, log = TRUE))
-  return(-dlogis(x, 0, .5, log = TRUE))
-  return(-dnorm(x, 0, .5, log = TRUE))
-  return(-dcauchy(x, scale = .1, log = TRUE))
-  return(-.dtest(x, s = s, log = TRUE))
-  # return(-.d2unif(x, log = TRUE))
-  out <- log(s) - log(alpha)
-  x <- (x - m) / s
-  out + (1 + alpha) * log(x) + x^(-alpha)
-}
+# dnig <- function(x, alpha, beta, delta, mu, log = FALSE) {
+#   
+#   # Ensure constraints are met (alpha > 0, delta > 0, |beta| < alpha)
+#   if (alpha <= 0 || delta <= 0 || any(abs(beta) >= alpha)) {
+#     stop("Parameters must satisfy: alpha > 0, delta > 0, and |beta| < alpha.")
+#   }
+#   
+#   # Pre-calculate common terms
+#   gamma <- sqrt(alpha^2 - beta^2)
+#   z <- x - mu
+#   
+#   # Calculate K_1 (Modified Bessel function of the third kind, order 1)
+#   # R uses 'besselK(x, nu)' where nu is the order.
+#   bessel_term <- besselK(alpha * sqrt(delta^2 + z^2), 1)
+#   
+#   # Calculate the NIG density f(x)
+#   # The formula is: f(x) = (alpha * delta / pi) * K_1(alpha * sqrt(delta^2 + z^2)) * #                     * exp(delta * gamma + beta * z) / sqrt(delta^2 + z^2)
+#   
+#   # Term 1: The constant part
+#   constant_term <- (alpha * delta / pi) * exp(delta * gamma)
+#   
+#   # Term 2: The variable part
+#   variable_term <- bessel_term * exp(beta * z) / sqrt(delta^2 + z^2)
+#   
+#   # Full density
+#   density <- constant_term * variable_term
+#   
+#   # Handle log argument
+#   if (log) {
+#     return(log(density))
+#   } else {
+#     return(density)
+#   }
+# }
+# 
+# .nldfrech <- function(x, s = 1, lambda = 1) {
+#   # x <- abs(x)
+#   # return(-dexp(x, rate = 1 / s, log = TRUE))
+#   # return(-dnorm(x, 0, s, log = TRUE))
+#   # return(-dcauchy(x, 0, s, log = TRUE))
+#   # return(-sn::dst(x,  xi = 0, omega = 1, alpha = 5, nu = 5, log = TRUE))
+#   # return(-.dst0(x, omega = s, alpha = 5, nu = 5, log = TRUE))
+#   # return(-.dmixexpnorm(x, p = 0.5, rate = s, sd = .01, log = TRUE))
+#   alpha <- 100
+#   beta <- sqrt(alpha^2 - 1)
+#   mu <- -s#- s * beta / sqrt(alpha * alpha - beta * beta)
+#   return(-log(dnig(x, alpha, beta, s, mu)))
+#   return(-log(.9 * dnorm(x, 0, s) * .1 * dgamma(x, shape = 2)))
+#   return(-dEMG(x, 0, s, lambda, log = TRUE))
+#   return(-dsech(x, 0, .5, log = TRUE))
+#   return(-dstudent(x, 1, 0, .5, log = TRUE))
+#   return(-dlogis(x, 0, .5, log = TRUE))
+#   return(-dnorm(x, 0, .5, log = TRUE))
+#   return(-dcauchy(x, scale = .1, log = TRUE))
+#   return(-.dtest(x, s = s, log = TRUE))
+#   # return(-.d2unif(x, log = TRUE))
+#   out <- log(s) - log(alpha)
+#   x <- (x - m) / s
+#   out + (1 + alpha) * log(x) + x^(-alpha)
+# }
 
 .pend012 <- function(pars, s = .1, lambda = 1, deriv = 0, eps = 1e-4) {
   out <- list()

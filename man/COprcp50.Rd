@@ -17,10 +17,10 @@ array (\code{prcp}) of top 50 daily precipitation amounts for 56 years
 }
 \examples{
 
-library(egmrf)
+library(evgmrf)
 data(COprcp50)
 
-COprcp50$z <- colMeans(COprcp50$prcp, dims = 2)
+COprcp50$z <- colMeans(COprcp50$prcp, na.rm = TRUE)
 image(COprcp50)
 
 }

@@ -59,6 +59,10 @@
 
 \item{sdif}{standard deviation inflation factor; defaults to 1}
 
+\item{openmp}{to do}
+
+\item{threads}{to do}
+
 \item{...}{unused}
 }
 \value{

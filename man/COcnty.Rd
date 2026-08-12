@@ -3,6 +3,9 @@
 \docType{data}
 \name{COcnty}
 \alias{COcnty}
+\alias{COcnty.adjacency}
+\alias{COcnty.polygons}
+\alias{COcnty.prcp}
 \title{Colorado county annual maxima of daily precipitation}
 \format{
 A matrix (\code{COcnty.prcp}), list \code{COcnty.polygons} and a matrix
@@ -21,7 +24,7 @@ adjacency matrix for with rows and columns matching the order of
 }
 \examples{
 
-library(egmrf)
+library(evgmrf)
 data(COcnty)
 
 COcnty.prcp_mean <- colMeans(COcnty.prcp)

@@ -28,6 +28,8 @@
 
 \item{simplify2array}{to do}
 
+\item{decompose}{to do}
+
 \item{...}{unused}
 }
 \value{

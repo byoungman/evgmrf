@@ -17,7 +17,7 @@ five order statistics (dimension 2) from 1970 to 2025 for a 28 by 16 grid.
 }
 \examples{
 
-library(egmrf)
+library(evgmrf)
 data(COtop5prcp)
 
 COtop5prcp$z <- colMeans(COtop5prcp$prcp, dims = 2)

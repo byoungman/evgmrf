@@ -12,7 +12,7 @@
 #' @usage data(COtop5prcp)
 #' @examples
 #' 
-#' library(egmrf)
+#' library(evgmrf)
 #' data(COtop5prcp)
 #'
 #' COtop5prcp$z <- colMeans(COtop5prcp$prcp, dims = 2)
@@ -34,10 +34,10 @@ NULL
 #' @usage data(COprcp20)
 #' @examples
 #' 
-#' library(egmrf)
+#' library(evgmrf)
 #' data(COprcp20)
 #'
-#' COprcp20$z <- colMeans(COprcp20$prcp, dims = 2)
+#' COprcp20$z <- colMeans(COprcp20$prcp, na.rm = TRUE)
 #' image(COprcp20)
 #'
 NULL
@@ -56,10 +56,10 @@ NULL
 #' @usage data(COprcp50)
 #' @examples
 #' 
-#' library(egmrf)
+#' library(evgmrf)
 #' data(COprcp50)
 #'
-#' COprcp50$z <- colMeans(COprcp50$prcp, dims = 2)
+#' COprcp50$z <- colMeans(COprcp50$prcp, na.rm = TRUE)
 #' image(COprcp50)
 #'
 NULL
@@ -79,10 +79,11 @@ NULL
 #' @docType data
 #' @keywords datasets
 #' @name COcnty
+#' @aliases COcnty.adjacency COcnty.polygons COcnty.prcp
 #' @usage data(COcnty)
 #' @examples
 #' 
-#' library(egmrf)
+#' library(evgmrf)
 #' data(COcnty)
 #'
 #' COcnty.prcp_mean <- colMeans(COcnty.prcp)
@@ -91,4 +92,15 @@ NULL
 #' cols <- rev(grey(ppoints(COcnty.prcp_mean)))[rank(COcnty.prcp_mean)]
 #' polygon(coords, col = cols)
 #'
+NULL
+
+#' Colorado excess precipitation data
+#'
+#' Description of what COexcprcp contains goes here.
+#'
+#' @format Describe the format (e.g., A data frame with X rows and Y variables)
+#' @docType data
+#' @keywords datasets
+#' @name COexcprcp
+#' @usage data(COexcprcp)
 NULL
