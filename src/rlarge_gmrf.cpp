@@ -82,7 +82,7 @@ arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc, arma::field<
   int n = yc.n_rows; // number of locations
   int m, r;
   
-  double mu, lpsi, txi, xi;
+  double mu, lpsi, txi;
   
   arma::mat yv, wv;
   arma::rowvec y, w, ee1;
@@ -98,7 +98,7 @@ arma::mat rlargegmrfld12(arma::mat pars, arma::field<arma::mat> yc, arma::field<
     mu = pars(0, j);
     lpsi = pars(1, j);
     txi = pars(2, j);
-    xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
+//    xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
     
     m = yc(j).n_rows; // number of obs
     r = yc(j).n_cols; // number of order statistics
@@ -292,7 +292,7 @@ arma::mat rlargegmrfld12_omp(const arma::mat& pars, const arma::field<arma::mat>
 #pragma omp parallel
 {
   
-  double mu, lpsi, txi, xi;
+  double mu, lpsi, txi;
   arma::rowvec y, w, ee1;
 
   double ee2, ee3, ee5, ee6, ee7, ee8, ee9;
@@ -305,7 +305,7 @@ arma::mat rlargegmrfld12_omp(const arma::mat& pars, const arma::field<arma::mat>
     mu = pars(0, j);
     lpsi = pars(1, j);
     txi = pars(2, j);
-    xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
+//    xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
     
     const arma::mat& yv = yc(j);
     const arma::mat& wv = wc(j);

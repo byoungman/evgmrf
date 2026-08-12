@@ -13,7 +13,7 @@ tighten(x)
 An \code{array}
 }
 \description{
-Function \code{tighten} takes a three-dimensional array with NAs in, and reduces 
+Function \code{tighten} takes a three-dimensional array with NAs in, and reduces
 dimension, if possible.
 }
 \details{

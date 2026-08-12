@@ -11,7 +11,7 @@ A list of lenght three
 data(COtop5prcp)
 }
 \description{
-A list of grid longitude (\code{x}) and latitude (\code{y}) values and an 
+A list of grid longitude (\code{x}) and latitude (\code{y}) values and an
 array (\code{prcp}) of precipitation values for 56 years (dimension 1), the top
 five order statistics (dimension 2) from 1970 to 2025 for a 28 by 16 grid.
 }

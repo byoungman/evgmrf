@@ -173,7 +173,7 @@ arma::mat aldgmrfldJ(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma
 {
   
   int n = yc.n_rows; // number of locations
-  int m;
+  int m = yc(0).size();
   
   double y, w, mu, lpsi;
   double res;

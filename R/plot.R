@@ -36,7 +36,6 @@
 #' @return A plot
 #' 
 #' @export
-#' 
 plot.evgmrf <- function(x, type = 'link', prob = NULL, polygons = NULL,
                         lims = NULL, nlev = NULL, edge.drop, index = x$index, 
                         xid = 1:x$nx, yid = 1:x$ny, nrc = NULL, decompose = FALSE, drop.parametric = TRUE,

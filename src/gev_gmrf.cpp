@@ -74,7 +74,7 @@ arma::mat tgevgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<ar
   int n = yc.n_rows; // number of locations
   int m;
   
-  double y, w, mu, lpsi, txi, xi;
+  double y, w, mu, lpsi, txi;
   
   arma::mat out = arma::mat(n, 9, arma::fill::zeros);
   
@@ -167,7 +167,7 @@ arma::mat tgevgmrfldJ(arma::mat pars, arma::field<arma::vec> yc, arma::field<arm
   int n = yc.n_rows; // number of locations
   int m = yc(0).size();
   
-  double y, w, mu, lpsi, txi, xi;
+  double y, w, mu, lpsi, txi;
   
   arma::mat h = arma::mat(n, 6, arma::fill::zeros);
   arma::cube g = arma::cube(n, m, 3, arma::fill::zeros);
@@ -271,14 +271,14 @@ arma::cube tgevgmrfldJarr(arma::mat pars, arma::field<arma::vec> yc, arma::field
   int n = yc.n_rows; // number of locations
   int m = yc(0).size();
   
-  double y, w, mu, lpsi, txi, xi;
+  double y, w, mu, lpsi, txi;
   
   arma::cube g = arma::cube(n, m, 3, arma::fill::zeros);
   
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
-  double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
-  double ee30, ee31, ee33, ee34;
+  double ee23, ee28, ee29;
+  double ee33;
   
   arma::vec yv, wv;
   
@@ -315,18 +315,18 @@ arma::cube tgevgmrfldJarr(arma::mat pars, arma::field<arma::vec> yc, arma::field
         ee16 = log1p(ee9);
         ee17 = 1/ee12;
         ee18 = R_pow(ee10, ee13);
-        ee20 = ee3 * ee5;
-        ee21 = 1 + ee17;
-        ee22 = 1.5 * (ee16/(ee12 * ee5));
+//        ee20 = ee3 * ee5;
+//        ee21 = 1 + ee17;
+//        ee22 = 1.5 * (ee16/(ee12 * ee5));
         ee23 = 1.5/ee12;
-        ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
-        ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
+//        ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
+//        ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
         ee28 = ee13 * ee5;
         ee29 = ee13 * ee7;
-        ee30 = ee15 * ee6;
-        ee31 = R_pow(ee5, 2);
+//        ee30 = ee15 * ee6;
+//        ee31 = R_pow(ee5, 2);
         ee33 = 1.5 * (ee7/(ee18 * ee6));
-        ee34 = ee4 - ee21;
+//        ee34 = ee4 - ee21;
         
         g(j, k, 0) = w * (-((ee28 - ee17)/ee14));
         g(j, k, 1) = w * ((ee17 - ee28) * ee7/ee14 + 1);
@@ -591,7 +591,7 @@ arma::mat tgevgmrfld12_omp(const arma::mat& pars, const arma::field<arma::vec>& 
 #pragma omp parallel
 {
   
-  double y, w, mu, lpsi, txi, xi;
+  double y, w, mu, lpsi, txi;
   
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;

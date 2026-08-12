@@ -7,15 +7,6 @@
 
 const double xieps = 0.0001;
 
-// //' Generalized extreme value (GEV) distribution negative log-likelihood
-// //'
-// //' @param pars a nx x ny x 3 cube of GEV parameters
-// //' @param y a nx x ny x m cube of block maxima
-// //' @return tppugmrfd0 a scalar, the negative log-likelihood
-// //' @return tppugmrfd12 a matrix, first then second derivatives w.r.t. GEV parameters
-// //' @examples
-// //' ## to follow
-// //' @export
 // [[Rcpp::export(.tppugmrfld0)]]
 double tppugmrfld0(arma::mat pars, arma::vec uv, arma::vec wv)
 {
@@ -44,7 +35,6 @@ return(nllh);
   
 }
 
-// //' @rdname tppugmrfld0
 // [[Rcpp::export(.tppugmrfld12)]]
 arma::mat tppugmrfld12(arma::mat pars, arma::vec uv, arma::vec wv)
 {
@@ -114,15 +104,6 @@ arma::mat tppugmrfld12(arma::mat pars, arma::vec uv, arma::vec wv)
   
 }
 
-/// //' Generalized extreme value (GEV) distribution negative log-likelihood
-// //'
-// //' @param pars a nx x ny x 3 cube of GEV parameters
-// //' @param y a nx x ny x m cube of block maxima
-// //' @return tppzgmrfd0 a scalar, the negative log-likelihood
-// //' @return tppzgmrfd12 a matrix, first then second derivatives w.r.t. GEV parameters
-// //' @examples
-// //' ## to follow
-// //' @export
 // [[Rcpp::export(.tppzgmrfld0)]]
 double tppzgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc)
 {
@@ -133,7 +114,7 @@ double tppzgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::
   double nllh = 0.0;
   
   double y, w, mu, lpsi, txi, xi;
-  double ee1, ee2;
+  double ee1;
   arma::vec yv, wv;
   
   for (int j=0; j < n; j++) {
@@ -174,7 +155,6 @@ double tppzgmrfld0(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::
   
 }
 
-//' @rdname tppzgmrfld0
 // [[Rcpp::export(.tppzgmrfld12)]]
 arma::mat tppzgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<arma::vec> wc)
 {
@@ -182,7 +162,7 @@ arma::mat tppzgmrfld12(arma::mat pars, arma::field<arma::vec> yc, arma::field<ar
   int n = yc.n_rows; // number of locations
   int m;
   
-  double y, w, mu, lpsi, txi, xi;
+  double y, w, mu, lpsi, txi;
   
   arma::mat out = arma::mat(n, 9, arma::fill::zeros);
   

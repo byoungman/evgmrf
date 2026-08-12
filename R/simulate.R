@@ -29,7 +29,6 @@
 #' @return A \code{list} or \code{array}
 #' 
 #' @export
-#' 
 simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob = NULL,
                             simplify2array = TRUE, decompose = FALSE, ...) {
   if(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))

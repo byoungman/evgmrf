@@ -292,7 +292,7 @@ evgmrf <- function(z, formula = ~ -1, covariates, family = 'gev', weights = 1, i
   }  
   .ld$np <- sum(!is.na(model))
   # put together fixed effects stuff
-  if (class(formula) == 'formula')
+  if (is(formula, 'formula'))
     formula <- lapply(1:.ld$np0, function(i) formula)
   if (missing(covariates)) {
     covariates <- data.frame(id = 1:n)

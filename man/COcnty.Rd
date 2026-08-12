@@ -17,9 +17,9 @@ data(COcnty)
 \description{
 Three data files. \code{COcnty.prcp} a 56 x 64 matrix of 56 annual maxima of
 daily precipitation for the 64 Colorado counties. \code{COcnty.polygons} a list
-of 64 polygons giving the county boundaries as a list with longitude (\code{x}) 
-and latitude (\code{y}) coordinates. \code{COcnty.adjacency} a 64 x 64 
-adjacency matrix for with rows and columns matching the order of 
+of 64 polygons giving the county boundaries as a list with longitude (\code{x})
+and latitude (\code{y}) coordinates. \code{COcnty.adjacency} a 64 x 64
+adjacency matrix for with rows and columns matching the order of
 \code{COcnty.polygons} and the columns of \code{COcnty.prcp}.
 }
 \examples{

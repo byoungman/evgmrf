@@ -11,8 +11,8 @@ A list of length three
 data(COprcp20)
 }
 \description{
-A list of grid longitude (\code{x}) and latitude (\code{y}) values and an 
-array (\code{prcp}) of daily precipitation amounts above 20mm for 56 years 
+A list of grid longitude (\code{x}) and latitude (\code{y}) values and an
+array (\code{prcp}) of daily precipitation amounts above 20mm for 56 years
 (dimension 1), for a 28 by 16 grid.
 }
 \examples{

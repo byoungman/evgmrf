@@ -68,7 +68,7 @@ int n = yv.size(); // number of locations
   double y;
 
   double ee2, ee3, ee5, ee6, ee7, ee8, ee9;
-  double ee10, ee11, ee12, ee13, ee14, ee16, ee17, ee18, ee19;
+  double ee10, ee11, ee12, ee13, ee14, ee17, ee18;
   
   for (int i=0; i < n; i++) {
     
@@ -86,10 +86,10 @@ int n = yv.size(); // number of locations
     ee12 = 1 + 1/ee5;
     ee13 = R_pow(ee5, 2);
     ee14 = y * ee12;
-    ee16 = ee11 * ee9 * ee6;
+//    ee16 = ee11 * ee9 * ee6;
     ee17 = log1p(ee8);
     ee18 = ee14 * ee5;
-    ee19 = ee7/ee10;
+//    ee19 = ee7/ee10;
     
     g(0) += 1 - ee18/ee10;
     g(1) += (1.5 * (ee14/ee10) - 1.5 * (ee17/ee13)) * ee2/

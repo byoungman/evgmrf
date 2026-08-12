@@ -9,7 +9,7 @@ double tpprocgmrfld0(arma::mat pars, arma::field<double> yc, double mult)
     
 int n = yc.n_rows; // number of locations
 
-double y, llambda, lambda;
+double llambda, lambda;
 double nllh = 0.0;
 
 double yv;
@@ -34,7 +34,7 @@ arma::mat tpprocgmrfld12(arma::mat pars, arma::field<double> yc, double mult)
   
   int n = yc.n_rows; // number of locations
 
-  double y, llambda, lambda;
+  double llambda, lambda;
   arma::mat out = arma::mat(n, 2, arma::fill::zeros);
   
   double yv;

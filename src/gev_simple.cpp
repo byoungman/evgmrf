@@ -85,8 +85,8 @@ int n = yv.size(); // number of locations
   
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
-  double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
-  double ee30, ee31, ee33, ee34;
+  double ee23, ee28, ee29;
+  double ee33;
   
   for (int i=0; i < n; i++) {
     
@@ -108,18 +108,18 @@ int n = yv.size(); // number of locations
     ee16 = log1p(ee9);
     ee17 = 1/ee12;
     ee18 = R_pow(ee10, ee13);
-    ee20 = ee3 * ee5;
-    ee21 = 1 + ee17;
-    ee22 = 1.5 * (ee16/(ee12 * ee5));
+//    ee20 = ee3 * ee5;
+//    ee21 = 1 + ee17;
+//    ee22 = 1.5 * (ee16/(ee12 * ee5));
     ee23 = 1.5/ee12;
-    ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
-    ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
+//    ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
+//    ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
     ee28 = ee13 * ee5;
     ee29 = ee13 * ee7;
-    ee30 = ee15 * ee6;
-    ee31 = R_pow(ee5, 2);
+//    ee30 = ee15 * ee6;
+//    ee31 = R_pow(ee5, 2);
     ee33 = 1.5 * (ee7/(ee18 * ee6));
-    ee34 = ee4 - ee21;
+//    ee34 = ee4 - ee21;
     
     g(0) += -((ee28 - ee17)/ee14);
     g(1) += (ee17 - ee28) * ee7/ee14 + 1;
@@ -151,7 +151,7 @@ arma::mat tgev2(arma::vec pars, arma::vec yv, double delta)
   
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
-  double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
+  double ee20, ee21, ee22, ee23, ee25, ee27, ee29;
   double ee30, ee31, ee33, ee34;
   
   for (int i=0; i < n; i++) {
@@ -180,7 +180,7 @@ arma::mat tgev2(arma::vec pars, arma::vec yv, double delta)
     ee23 = 1.5/ee12;
     ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
     ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
-    ee28 = ee13 * ee5;
+//    ee28 = ee13 * ee5;
     ee29 = ee13 * ee7;
     ee30 = ee15 * ee6;
     ee31 = R_pow(ee5, 2);
@@ -234,8 +234,8 @@ arma::mat tgev1sand(arma::vec pars, arma::vec yv)
   
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
-  double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
-  double ee30, ee31, ee33, ee34;
+  double ee23, ee28, ee29;
+  double ee33;
   
   for (int i=0; i < n; i++) {
     
@@ -257,18 +257,18 @@ arma::mat tgev1sand(arma::vec pars, arma::vec yv)
     ee16 = log1p(ee9);
     ee17 = 1/ee12;
     ee18 = R_pow(ee10, ee13);
-    ee20 = ee3 * ee5;
-    ee21 = 1 + ee17;
-    ee22 = 1.5 * (ee16/(ee12 * ee5));
+//    ee20 = ee3 * ee5;
+//    ee21 = 1 + ee17;
+//    ee22 = 1.5 * (ee16/(ee12 * ee5));
     ee23 = 1.5/ee12;
-    ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
-    ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
+//    ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
+//    ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
     ee28 = ee13 * ee5;
     ee29 = ee13 * ee7;
-    ee30 = ee15 * ee6;
-    ee31 = R_pow(ee5, 2);
+//    ee30 = ee15 * ee6;
+//    ee31 = R_pow(ee5, 2);
     ee33 = 1.5 * (ee7/(ee18 * ee6));
-    ee34 = ee4 - ee21;
+//    ee34 = ee4 - ee21;
     
     G(i, 0) = -((ee28 - ee17)/ee14);
     G(i, 1) = (ee17 - ee28) * ee7/ee14 + 1;
@@ -298,7 +298,7 @@ arma::mat tgev2sand(arma::vec pars, arma::vec yv)
   
   double ee2, ee3, ee4, ee5, ee6, ee7, ee9;
   double ee10, ee11, ee12, ee13, ee14, ee15, ee16, ee17, ee18;
-  double ee20, ee21, ee22, ee23, ee25, ee27, ee28, ee29;
+  double ee20, ee21, ee22, ee23, ee25, ee27, ee29;
   double ee30, ee31, ee33, ee34;
   
   for (int i=0; i < n; i++) {
@@ -327,7 +327,7 @@ arma::mat tgev2sand(arma::vec pars, arma::vec yv)
     ee23 = 1.5/ee12;
     ee25 = (((ee23 - 1.5 * ee5) * ee7/ee14 + 1.5) * ee13 - (1.5 +  ee22)/ee5)/ee10 * ee2;
     ee27 = ((4.5/ee20 - 3) * ee2/ee3 + 1.5) * ee16;
-    ee28 = ee13 * ee5;
+//    ee28 = ee13 * ee5;
     ee29 = ee13 * ee7;
     ee30 = ee15 * ee6;
     ee31 = R_pow(ee5, 2);

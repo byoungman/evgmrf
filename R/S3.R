@@ -22,7 +22,6 @@
 #' @name summary.evgmrf
 #'
 #' @export
-#' 
 summary.evgmrf <- function(object, ...) {
   if (!missing(...)) warning("extra arguments discarded")
   out <- list(family = toupper(object$family))
@@ -43,7 +42,6 @@ summary.evgmrf <- function(object, ...) {
 #' @rdname summary.evgmrf
 #' 
 #' @export
-#' 
 print.summary.evgmrf <- function(x, ...) {
   if (!missing(...)) warning("extra arguments discarded")
   cat('\n Call: ', deparse(x$call), '\n\n')
@@ -78,7 +76,6 @@ print.summary.evgmrf <- function(x, ...) {
 #' print(m_gev)
 #'
 #' @export
-#' 
 print.evgmrf <- function(x, ...) {
   if (!missing(...)) warning("extra arguments discarded")
   print(x$call)
@@ -100,7 +97,6 @@ print.evgmrf <- function(x, ...) {
 #' logLik(m_gev)
 #'
 #' @export
-#' 
 logLik.evgmrf <- function(object, ...) {
   if (!missing(...)) warning("extra arguments discarded")
   out <- object$logLik
@@ -123,7 +119,6 @@ logLik.evgmrf <- function(object, ...) {
 #' @return Fitted values extracted from the object `object'.
 #' 
 #' @export
-#' 
 fitted.evgmrf <- function(object, ...) {
   predict(object)
 }
@@ -143,7 +138,6 @@ fitted.evgmrf <- function(object, ...) {
 #' @return Fitted values extracted from the object `object'.
 #' 
 #' @export
-#' 
 coef.evgmrf <- function(object, ...) {
   out <- split(object$beta, attr(object$beta, 'split'))
   names(out) <- object$names$response

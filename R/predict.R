@@ -40,7 +40,6 @@
 #' @return A \code{list} or \code{array}
 #' 
 #' @export
-#' 
 predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
                            simplify2array = FALSE, xid = object$xid, yid = object$yid,
                            loop = TRUE, progress = loop, chunksize = 1e2, se.method = 'direct',

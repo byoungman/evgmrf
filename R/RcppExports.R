@@ -129,7 +129,6 @@
     .Call(`_evgmrf_tppzgmrfld0`, pars, yc, wc)
 }
 
-#' @rdname tppzgmrfld0
 .tppzgmrfld12 <- function(pars, yc, wc) {
     .Call(`_evgmrf_tppzgmrfld12`, pars, yc, wc)
 }
