@@ -477,7 +477,6 @@ evgmrf <- function(z,
         f0 <- f1
         attr(lambda0, "beta") <- attr(f0, 'beta')
         it <- it + 1
-        print(as.vector(lambda0))
       } else {
         cond <- FALSE
       }
