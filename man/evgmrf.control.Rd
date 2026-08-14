@@ -10,9 +10,15 @@ evgmrf.control(
   step_size = 0.2,
   reml_eps = 0.005,
   reml_direction = "ad-hoc",
-  reml_steptol = 0.005,
-  reml_stepmax = 1,
+  reml_steptol = 1e-04,
+  reml_stepmax = 2.5,
   reml_itlim = 100,
+  reml_gradtol = 0.01,
+  reml_dgradtol = 1e-04,
+  reml_fntol = 1e-06,
+  reml_alpha0 = 1,
+  reml_rho0 = 0.1,
+  line_search_mult = 1,
   inner_optim = "chol",
   alpha.tol = 1e-06,
   grad_mult = 0,
@@ -54,13 +60,31 @@ for parameters greater than 1, and a forward difference is applied otherwise.
 Defaults to \code{"ad-hoc"}.}
 
 \item{reml_steptol}{A numeric value defining the minimum step length tolerance
-for REML updates. Defaults to \code{5e-3}.}
+for REML updates. Defaults to \code{1e-4}.}
 
 \item{reml_stepmax}{A numeric value specifying the maximum permissible step
-length taken during a single REML update iteration. Defaults to \code{1}.}
+length taken during a single REML update iteration. Defaults to \code{2.5}.}
 
 \item{reml_itlim}{An integer setting the hard iteration limit for the REML
 optimization process. Defaults to \code{100}.}
+
+\item{reml_gradtol}{A scalar setting the gradient tolerance for the REML
+optimization process. Defaults to \code{1e-2}.}
+
+\item{reml_dgradtol}{A scalar setting the gradient tolerance difference
+over four iterations for the REML optimization process. Defaults to \code{1e-4}.}
+
+\item{reml_fntol}{A scalar setting the function tolerance for the REML
+optimization process. Defaults to \code{1e-6}.}
+
+\item{reml_alpha0}{A scalar setting the initial line search multiplier for the REML
+optimization process. Defaults to \code{1}.}
+
+\item{reml_rho0}{A scalar setting the multiplicative rate at thish the line search
+multiplier is reduced for the REML optimization process. Defaults to \code{0.5}.}
+
+\item{line_search_mult}{A multiplier for the step when line searches take
+place. Defaults to \code{1}.}
 
 \item{inner_optim}{A character string selecting the linear algebraic solver
 for inner loop parameters; defaults to \code{"chol"} (Cholesky). If explicitly

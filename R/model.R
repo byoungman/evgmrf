@@ -35,6 +35,8 @@
 #' data(COtop5prcp)
 #' COmxprcp <- COtop5prcp$prcp[, 1, , ]
 #' m_gev_car <- evgmrf(COmxprcp, family = 'gev', model = c('car', 'icar', 'icar'))
+#' # As above, but with constant shape parameter, i.e. no GMRF
+#' m_gev_car2 <- evgmrf(COmxprcp, family = 'gev', model = c('car', 'icar', NA))
 #' 
 #' m_gev_bym <- evgmrf(COmxprcp, family = 'gev', model = c('bym2', 'icar', 'icar'))
 #' 

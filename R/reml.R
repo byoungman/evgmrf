@@ -1,27 +1,10 @@
-.reml0 <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps, direction) {
+.reml0 <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps, direction, kept = NULL) {
   beta <- attr(pars, 'beta')
   Q <- makeQ(pars, Qd, likdata$control$alpha.tol)
-  # derivative test
-  # browser()
-  # n_test <- 2
-  # t1 <- likdata
-  # t1$z <- t1$z[1:n_test]
-  # id_test <- as.integer(matrix(1:length(beta), length(likdata$z))[1:n_test, , drop = FALSE])
-  # t2 <- beta[id_test]
-  # t3 <- Q[id_test, id_test]
-  # t1$psplit <- likdata$psplit[id_test]
-  # t1$Xl <- lapply(t1$Xl, function(x) x[1:n_test, 1:n_test, drop = FALSE])
-  # t1$X <- likdata$X[id_test, id_test]
-  # t1$u <- t1$u[1:n_test]
-  # t1$uw <- t1$uw[1:n_test]
-  # .d0_Q(t2, t1, likfns, t3)
-  # numDeriv::grad(function(x) .d0_Q(x, t1, likfns, t3), t2)
-  # .d12_Q(t2, t1, likfns, t3)
-  if (is.null(attr(pars, 'first'))) {
-    fit <- .newton(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, stepmax = 3)
-  } else {
-    fit <- .newton(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, stepmax = 3, itlim = 1e3)
-  }
+  ctrl <- evgam:::evgam.control()$inner
+  if (attr(pars, 'first')) 
+    ctrl$itlim <- 1e3
+  fit <- evgam:::.newton_step_inner(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, control = ctrl)
   beta1 <- fit$par
   out <- fit$objective
   attr(out, 'unpenalised') <- attr(fit$objective, 'unpenalised')
@@ -39,8 +22,63 @@
   attr(out, 'cholprecondHessian') <- fit$cholprecondHessian
   attr(out, 'diagHessian') <- fit$diagHessian
   attr(out, 'idiagHessian') <- fit$idiagHessian
+  attr(out, 'betal') <- NULL
   out
 }
+
+# .reml0 <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps, direction, kept = NULL) {
+#   beta <- attr(pars, 'beta')
+#   Q <- makeQ(pars, Qd, likdata$control$alpha.tol)
+#   # derivative test
+#   # browser()
+#   # n_test <- 2
+#   # t1 <- likdata
+#   # t1$z <- t1$z[1:n_test]
+#   # id_test <- as.integer(matrix(1:length(beta), length(likdata$z))[1:n_test, , drop = FALSE])
+#   # t2 <- beta[id_test]
+#   # t3 <- Q[id_test, id_test]
+#   # t1$psplit <- likdata$psplit[id_test]
+#   # t1$Xl <- lapply(t1$Xl, function(x) x[1:n_test, 1:n_test, drop = FALSE])
+#   # t1$X <- likdata$X[id_test, id_test]
+#   # t1$u <- t1$u[1:n_test]
+#   # t1$uw <- t1$uw[1:n_test]
+#   # .d0_Q(t2, t1, likfns, t3)
+#   # numDeriv::grad(function(x) .d0_Q(x, t1, likfns, t3), t2)
+#   # .d12_Q(t2, t1, likfns, t3)
+#   ctrl <- evgam:::evgam.control()$inner
+#   # if (!attr(pars, 'first')) {
+#     ctrl$dgradtol <- 0
+#     ctrl$gradtol <- .1 * ctrl$gradtol
+#     browser()
+#     system.time(fit <- evgam:::.newton_step_inner(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, control = ctrl))
+#     fit0 <- .newton(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, control = ctrl)
+#     # fit <- evgam:::.newton_step_inner(fit$par, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, control = ctrl)
+#     # print(c(fit$report, fit2$report))
+#     print(c(max(abs(fit0$gradient)), max(abs(fit$gradient))))
+#   # } else {
+#   #   ctrl$itlim <- 1e3
+#   #   fit <- .newton(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, control = ctrl)
+#   # }
+#   beta1 <- fit$par
+#   out <- fit$objective
+#   attr(out, 'unpenalised') <- attr(fit$objective, 'unpenalised')
+#   attr(out, 'penalised') <- as.numeric(fit$objective)
+#   out <- out + .5 * attr(fit$gradient, 'ldet')
+#   out <- out - .5 * attr(Q, 'logdet')
+#   out <- out + likdata$control$par_mult * sum(unlist(mapply('-', split(pars, Qd$spl), Qd$target))^2)
+#   out <- out + likdata$control$grad_mult * as.numeric(any(abs(fit$gradient) > 1))
+#   attr(out, 'beta') <- fit$par
+#   attr(out, 'gradient') <- fit$gradient
+#   attr(out, 'iterations') <- fit$iterations
+#   attr(out, 'precondHessian') <- fit$precondHessian
+#   attr(out, 'Hessian') <- fit$Hessian
+#   attr(out, 'H0') <- fit$H0
+#   attr(out, 'cholprecondHessian') <- fit$cholprecondHessian
+#   attr(out, 'diagHessian') <- fit$diagHessian
+#   attr(out, 'idiagHessian') <- fit$idiagHessian
+#   attr(out, 'betal') <- NULL
+#   out
+# }
 
 # .reml0_bfgs <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps, direction) {
 #   beta <- attr(pars, 'beta')
@@ -102,7 +140,7 @@
   g
 }
 
-.reml_step <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps = 5e-3, direction = 'backward') {
+.reml_step <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps = 5e-3, direction = 'backward', kept = NULL) {
   f0 <- .reml0(pars, likdata, likfns, Qd, alpha, makeQ, eps)
   b0 <- attr(f0, 'beta')
   np <- length(pars)

@@ -5,26 +5,26 @@
     stop('length(order) not multiple of length(model) or vice-versa.')
 }
 
-.inits_model <- function(model) {
-  if (is.na(model)) {
-    out <- numeric(0)
-  } else {
-    if (model == 'icar') {
-      out <- 1
-    } else {
-      if (model == 'car') {
-        out <- c(1, -4)
-      } else {
-        if (model == 'bym4') {
-          out <- 1
-        } else {
-          out <- c(1, -4)
-        }
-      }
-    }
-  }
-  out        
-}
+# .inits_model <- function(model) {
+#   if (is.na(model)) {
+#     out <- numeric(0)
+#   } else {
+#     if (model == 'icar') {
+#       out <- 1
+#     } else {
+#       if (model == 'car') {
+#         out <- c(1, -4)
+#       } else {
+#         if (model == 'bym4') {
+#           out <- 1
+#         } else {
+#           out <- c(1, -4)
+#         }
+#       }
+#     }
+#   }
+#   out        
+# }
 
 ## REML functions
 
@@ -191,20 +191,20 @@
 #   out + (1 + alpha) * log(x) + x^(-alpha)
 # }
 
-.pend012 <- function(pars, s = .1, lambda = 1, deriv = 0, eps = 1e-4) {
-  out <- list()
-  f0 <- .nldfrech(pars, s, lambda)
-  out[[1]] <- sum(f0)
-  if (deriv == 0)
-    return(out[[1]])
-  ph <- pars + eps
-  pl <- pars - eps
-  fh <- .nldfrech(ph, s, lambda)
-  fl <- .nldfrech(pl, s, lambda)
-  out[[2]] <- .5 * (fh - fl) / eps
-  out[[3]] <- (fh + fl - 2 * f0) / (eps^2)
-  out
-}
+# .pend012 <- function(pars, s = .1, lambda = 1, deriv = 0, eps = 1e-4) {
+#   out <- list()
+#   f0 <- .nldfrech(pars, s, lambda)
+#   out[[1]] <- sum(f0)
+#   if (deriv == 0)
+#     return(out[[1]])
+#   ph <- pars + eps
+#   pl <- pars - eps
+#   fh <- .nldfrech(ph, s, lambda)
+#   fl <- .nldfrech(pl, s, lambda)
+#   out[[2]] <- .5 * (fh - fl) / eps
+#   out[[3]] <- (fh + fl - 2 * f0) / (eps^2)
+#   out
+# }
 
 .pend012 <- function(pars, fn, lst, deriv = 0, eps = 1e-4) {
   out <- list()
@@ -530,7 +530,7 @@
   stp
 }
 
-.search_Q <- function(pars, likdata, likfns, Q) {
+.search_Q <- function(pars, likdata, likfns, Q, kept = NULL) {
   gH <- .d12_Q(pars, likdata, likfns, Q)
   H <- gH$H
   # if (.ld$precondition) {
@@ -623,3 +623,40 @@
 #   nlminb(inits, gev0, gev1, gev2, yv = y)$par
 # }
 
+.inits_model <- function(model, order = 1, alpha = NA, val, bymfns) {
+  if (is.na(model)) {
+    out <- numeric(0)
+  } else {
+    if (model == 'icar') {
+      out <- c(lambda = 1)
+    } else {
+      if (any(order > 1))
+        stop('order > 1 currently only possible for ICAR model.')
+      if (model == 'car') {
+        out <- c(lambda = 1, rho = -4)
+      } else {
+        if (substr(model, 1, 3) == 'bym') {
+          if (!is.finite(val))
+            val <- -3
+          if (model == 'bym3') {
+            out <- c(lambda = val)
+            if (!is.null(bymfns)) {
+              out2 <- attr(bymfns, 'inits')
+              names(out2) <- paste0('par', seq_along(out2))
+              out <- c(out, out2)
+            }
+          } else {
+            if (model == 'bym4') {
+              out <- c(lambda = 1)
+            } else {
+              out <- c(lambda = val, rho = -2.3)
+            }
+          }
+        }
+      }
+    }
+  }
+  if (any(order > 1) & is.na(alpha))
+    out <- c(out, - order[-1])
+  out        
+}

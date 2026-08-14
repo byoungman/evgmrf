@@ -1,6 +1,13 @@
-.newton <- function(pars, fn, sfn, ..., steptol = 1e-12, itlim = 1e2, fntol = 1e-12, gradtol = 1e-4, stepmax = 1e4, alpha0 = 1, trace = FALSE, reml = FALSE) {
+.newton <- function(pars, fn, sfn, control, ..., trace = FALSE, reml = FALSE) {
   
   pars0 <- pars
+  
+  steptol <- control$steptol
+  itlim <- control$itlim
+  fntol <- control$fntol
+  gradtol <- control$gradtol
+  stepmax <- control$stepmax
+  alpha0 <- control$alpha0
   
   it <- 1
   okay <- TRUE
@@ -25,7 +32,6 @@
       attr(pars, 'beta') <- b0
       step0 <- sfn(pars, ...)
     }
-    vstep0 <- as.vector(step0)
     g <- attr(step0, "gradient")
     H <- attr(step0, "Hessian")
     if (trace) {
@@ -49,13 +55,16 @@
     # if (any(too_big)) {
     #   step0[which(too_big)] <- sign(step0[which(too_big)]) * stepmax
     # }
-    vstep0 <- sign(vstep0) * pmin(abs(vstep0), stepmax)
+    biggest <- max(abs(step0))
+    if (biggest > stepmax)
+      step0 <- stepmax * step0 / biggest
     alpha <- alpha0
     report <- NULL
     ls <- TRUE
     while(ls & is.null(report)) {
-      step <- alpha * vstep0
-      stepokay <- mean(abs(step)) > steptol
+      step <- alpha * step0
+      stepokay <- sqrt(sum(step^2)) > steptol
+      # stepokay <- mean(abs(step)) > steptol
       if (!stepokay) {
         report <- c("step tolerance reached")
       } else {
@@ -68,7 +77,7 @@
           d <- 10
         if (d < 0) {
           attr(theta1, "beta") <- attr(f1, "beta")
-          attr(theta1, "betal") <- attr(f1, "betas")
+          attr(theta1, "betal") <- attr(f1, "betal")
           step1 <- try(sfn(theta1, ...), silent = TRUE)
           if (inherits(step1, "try-error")) 
             d <- 1
@@ -82,9 +91,9 @@
           b0 <- attr(f0, 'beta')
           pars <- theta1
           ls <- FALSE
-        } else {
-          if (d < fntol) 
+          if (abs(d) < fntol) 
             report <- c("function tolerance reached")
+        } else {
           alpha <- ifelse(alpha == 1, .1 * alpha, .5 * alpha)
         }
       }
@@ -118,7 +127,7 @@
     out$cholprecondHessian <- attr(step0, "cholprecondHessian")
     out$diagHessian <- Matrix::diag(attr(step0, "diagHessian"))
     out$idiagHessian <- attr(step0, "idiagHessian")
-    out$rankHessian <- attr(step0, "rank")
+    out$rankHessian <- attr(step0, "rankHessian")
   }
   out$convergence <- 0
   out$report <- report
@@ -144,6 +153,7 @@
   f_values_list[[1]] <- f(init, ...)
   
   attr(init, 'beta') <- attr(f_values_list[[1]], 'beta')
+  attr(init, 'first') <- FALSE
   
   if (trace > 0) {
     cat(paste('Iteration:', 0))
@@ -957,3 +967,4 @@
   out$idiagHessian <- attributes(f_values_list[[1]])$idiagHessian
   out
 }
+

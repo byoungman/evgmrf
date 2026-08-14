@@ -308,6 +308,7 @@ evgmrf <- function(z,
     if (length(order) == 1)
       order <- rep(order, .ld$np)
   }
+  .ld$control <- evgam:::evgam.control()
   order <- lapply(order, sort)
   if (.ld$np > 1) {
     if (length(model) == 1)
@@ -353,7 +354,9 @@ evgmrf <- function(z,
       b0 <- numeric(0)
       par_type[[i]] <- character()
     }
-    p0l[[i]] <- list(b0, p0m[, i])
+    p0l[[i]] <- list(b0)
+    if (gmrf[i])
+      p0l[[i]][[2]] <- p0m[, i]
   }
   if (!is.null(bymfns))
     model[!sapply(bymfns, is.null) & is.na(model)] <- 'bym4'
@@ -397,7 +400,7 @@ evgmrf <- function(z,
   .ld$openmp <- control$openmp
   .ld$threads <- control$threads
   .ld$control <- control
-  # rho0_temp <- as.vector(unlist(lapply(model, .inits_model)))
+  # lambda0_temp <- as.vector(unlist(lapply(model, .inits_model)))
   # par_var <- -log(20 * apply(p0m, 2, var))
   par_var <- log(apply(p0m, 2, sd))
   if(is.null(bymfns)) 
@@ -410,7 +413,7 @@ evgmrf <- function(z,
       lambda0 <- rep(lambda0, length(model))
     }
     if (length(lambda0) != length(lambda0_temp))
-      stop('Invalid rho0 supplied')
+      stop('Invalid lambda0 supplied')
     names(lambda0) <- names(lambda0_temp)
   }
   p0v <- as.vector(p0m)
@@ -434,11 +437,52 @@ evgmrf <- function(z,
   # }
   if (control$refine.inits)
      p0v <- .newton_diag(.d0_Q, .d1_Q, .d2_Q_diag, p0v, max_iter=1e4, likdata = .ld, likfns = .lf, Q = .mQ(lambda0, Qd0))
-  # p0v <- .beta0(rho0, Qd0, .ld, .lf, .mQ, control$it0)$par
+  # p0v <- .beta0(lambda0, Qd0, .ld, .lf, .mQ, control$it0)$par
   attr(lambda0, 'beta') <- p0v
-  # .ld$L0 <- .chol0(p0v, .ld, .lf, .mQ(rho0, Qd0))
+  # .ld$L0 <- .chol0(p0v, .ld, .lf, .mQ(lambda0, Qd0))
   if (control$inner_optim == 'Cholesky')
     .ld$chol0 <- .Cholesky0(lambda0, Qd0, control$super)
+  attr(lambda0, 'jitter') <- TRUE
+  if (attr(lambda0, 'jitter')) {
+    lambda00 <- lambda0
+    f0 <- .reml0(lambda0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ)
+    attr(lambda0, "beta") <- attr(f0, 'beta')
+    attr(lambda0, "first") <- FALSE
+    f1 <- 0 * as.vector(lambda0)
+    for (i in seq_along(lambda0)) {
+      lambda1 <- lambda0
+      lambda1[i] <- lambda0[i] + 1
+      f1[i] <- .reml0(lambda1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ)
+    }
+    adder <- c(0, 1)[1 + as.numeric(f1 < f0)]
+    other_way <- which(f1 > f0)
+    if (length(other_way) > 0) {
+      for (i in other_way) {
+        lambda1 <- lambda0
+        lambda1[i] <- lambda0[i] - 1
+        f1[i] <- .reml0(lambda1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ)
+      }
+      not_adder <- which(f1[other_way] < f0)
+      if (length(not_adder) > 0)
+        adder[other_way[not_adder]] <- -1
+    }
+    attr(lambda0, "beta") <- attr(f0, 'beta')
+    cond <- TRUE
+    it <- 0
+    while(cond & it < 5) {
+      lambda1 <- lambda0 + adder
+      f1 <- .reml0(lambda1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ)
+      if (f1 < f0) {
+        lambda0 <- lambda1
+        f0 <- f1
+        attr(lambda0, "beta") <- attr(f0, 'beta')
+        it <- it + 1
+        print(as.vector(lambda0))
+      } else {
+        cond <- FALSE
+      }
+    }
+  }
   if (is.list(cv)) {
     valid <- cv$valid
     .ldv <- .ldv2 <- lapply(seq_along(valid), function(.) .ld)
@@ -464,7 +508,7 @@ evgmrf <- function(z,
   } else {
   if (outer == 'nelder-mead') {
     if (length(lambda0) > 1) {
-      # out <- .nelder_mead_list(rho0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, trace = trace)
+      # out <- .nelder_mead_list(lambda0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, trace = trace)
       out <- .nelder_mead_discrete_list(lambda0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
                                         trace = trace, step_size = control$step_size)
     } else {
@@ -472,14 +516,37 @@ evgmrf <- function(z,
       out <- .brent(lambda0, .reml0, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, trace = trace)
     }
   } else {
+    control <- evgmrf.control()
+    control[c('stepmax', 'gradtol', 'steptol', 'itlim', 'dgradtol', 
+              'fntol', 'alpha0')] <- control[c('reml_stepmax', 'reml_gradtol', 'reml_steptol', 
+                                               'reml_itlim', 'reml_dgradtol', 'reml_fntol', 'line_search_mult')]
+    # a2r <- list()
+    # a2r$finalnames <- a2r$workingnames <- c(
+    #   'beta', 'gradient', 'precondHessian', 'Hessian', 'H0', 
+    #   'cholprecondHessian', 'diagHessian', 'idiagHessian')
     if (outer == 'newton') {
-      out <- .newton(lambda0, .reml0, .reml_step, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, reml = TRUE,
-                    eps = control$reml_eps, direction = control$reml_direction, trace = trace > 0, gradtol = 1e-2, 
-                    stepmax = control$reml_stepmax, steptol = control$reml_steptol, itlim = control$reml_itlim)
+      control$rho0 <- .25
+      out <- evgam:::.newton_step_inner(lambda0, .reml0, .reml_step, likdata = .ld, 
+                           likfns = .lf, Qd = Qd0, makeQ = .mQ, eps = control$reml_eps, 
+                           direction = control$reml_direction, trace = trace > 
+                             0, control = control, attr2pass = c('beta', 'betal'))
+      # out <- .newton(lambda0, .reml0, .reml_step, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, reml = TRUE,
+      #               eps = control$reml_eps, direction = control$reml_direction, trace = trace > 0, gradtol = 1e-2, 
+      #               stepmax = control$reml_stepmax, steptol = control$reml_steptol, itlim = control$reml_itlim)
     } else {
-      out <- .BFGS(lambda0, .reml0, .reml1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
-                   eps = control$reml_eps, direction = control$reml_direction, trace = trace > 0, gradtol = 1e-2, 
-                   stepmax = control$reml_stepmax, steptol = control$reml_steptol)
+      out <- evgam:::.BFGS(lambda0, .reml0, .reml1, likdata = .ld, 
+                           likfns = .lf, Qd = Qd0, makeQ = .mQ, eps = control$reml_eps, 
+                           direction = control$reml_direction, trace = trace > 
+                             0, control = control, attr2pass = c('beta', 'betal'))
+      
+      # out <- evgam:::.BFGS(lambda0, .reml0, .reml1, likdata = .ld, 
+      #              likfns = .lf, Qd = Qd0, makeQ = .mQ, eps = control$reml_eps, 
+      #              direction = control$reml_direction, trace = trace > 
+      #                0, control = control, attr2pass <- c('beta', 'betal', 'names'))
+      # 
+      # out <- .BFGS(lambda0, .reml0, .reml1, likdata = .ld, likfns = .lf, Qd = Qd0, makeQ = .mQ, 
+      #              eps = control$reml_eps, direction = control$reml_direction, trace = trace > 0, gradtol = 1e-2, 
+      #              stepmax = control$reml_stepmax, steptol = control$reml_steptol)
     }
   }}
   out$likdata <- .ld

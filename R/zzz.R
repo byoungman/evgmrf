@@ -1,282 +1,282 @@
-.inits_model <- function(model, order = 1, alpha = NA, val, bymfns) {
-  if (is.na(model)) {
-    out <- numeric(0)
-  } else {
-    if (model == 'icar') {
-      out <- c(lambda = 1)
-    } else {
-      if (any(order > 1))
-        stop('order > 1 currently only possible for ICAR model.')
-      if (model == 'car') {
-        out <- c(lambda = 1, rho = -4)
-      } else {
-        if (substr(model, 1, 3) == 'bym') {
-          if (!is.finite(val))
-            val <- -3
-          if (model == 'bym3') {
-            out <- c(lambda = val)
-            if (!is.null(bymfns)) {
-              out2 <- attr(bymfns, 'inits')
-              names(out2) <- paste0('par', seq_along(out2))
-              out <- c(out, out2)
-            }
-          } else {
-            if (model == 'bym4') {
-              out <- c(lambda = 1)
-            } else {
-              out <- c(lambda = val, rho = -2.3)
-              # out <- c(lambda = -3, rho = val)
-            }
-          }
-        }
-      }
-    }
-  }
-  if (any(order > 1) & is.na(alpha))
-    out <- c(out, - order[-1])
-  out        
-}
-
-.makeQ_data <- function(nx, ny, model, order, alpha, n_null, W = NULL, bymfns) {
-  if (is.null(W)) {
-    n <- nx * ny
-    # W <- spatstat.sparse::gridadjacencymatrix(c(nx, ny), diagonal = FALSE)
-    given_W <- FALSE
-  } else {
-    n <- nrow(W)
-    given_W <- TRUE
-  }
-  # d <- Matrix::colSums(W)
-  # ldetD <- sum(log(d))
-  # D <- Matrix::Diagonal(n, d)
-  # B <- Matrix::Diagonal(n, 1 / Matrix::colSums(W)) %*% W
-  id <- seq_along(n_null)
-  mods <- ords <- alphs <- rep(NA, length(id))
-  mods[id] <- model
-  ords[id] <- order
-  alphs[id] <- alpha
-  # alphs[ords == 1] <- NA
-  target <- list(icar = 1, 
-                 car = c(1, -4), 
-                 bym = c(1, -4), 
-                 bym2 = c(1, -4),
-                 bym3 = c(1),
-                 bym4 = c(1))[mods]
-  app <- lapply(ords, function(x) 0 * x[-1])
-  target <- lapply(seq_along(target), function(i) c(target[[i]], app[[i]]))
-  # if (any(ords > 1))
-  #   target[ords > 1] <- lapply(target[ords > 1], function(x) c(x, rep(0, ords[ords > 1] - 1)))
-  # reps <- sapply(mods, .model2n) + as.integer(ords > 1) - as.integer(is.finite(alphs))
-  reps <- sapply(target, length)
-  if (!is.null(bymfns)) {
-    for (i in 1:length(bymfns)) {
-      fnsi <- bymfns[[i]]
-      if (!is.null(fnsi)) {
-        nargs <- length(unlist(formals(fnsi))) - 1
-        reps[i] <- reps[i] + nargs
-      }
-    }
-  }
-  hyper_spl <- rep(id, reps)
-  Ql <- list()
-  if (!given_W) {
-    for (i in 1:max(unlist(order))) {
-      Ql[[i]] <- .makeQ_order(nx, ny, i)
-    }
-  }
-  # list(D = D, B = B, W = W, n = n, ldetD = ldetD, n_null = n_null, 
-  #      ord = ords, mod = mods, spl = rho_spl, np = length(id), 
-  #      target = target, Ql = Ql, nx = nx, ny = ny)
-  # W <- .Wlist(W, max(ords))
-  target <- target[reps > 0]
-  list(n = n, n_null = n_null, W = W,
-       ord = ords, mod = mods, alph = alphs, spl = hyper_spl, np = length(id), 
-       target = target, Ql = Ql, nx = nx, ny = ny)
-}
-
-# .Wlist <- function(W, pow) {
-#   out <- list(W)
-#   if (pow > 1) {
-#     for (i in 2:pow) {
-#       out[[i]] <- out[[i - 1]] %*% W
+# .inits_model <- function(model, order = 1, alpha = NA, val, bymfns) {
+#   if (is.na(model)) {
+#     out <- numeric(0)
+#   } else {
+#     if (model == 'icar') {
+#       out <- c(lambda = 1)
+#     } else {
+#       if (any(order > 1))
+#         stop('order > 1 currently only possible for ICAR model.')
+#       if (model == 'car') {
+#         out <- c(lambda = 1, rho = -4)
+#       } else {
+#         if (substr(model, 1, 3) == 'bym') {
+#           if (!is.finite(val))
+#             val <- -3
+#           if (model == 'bym3') {
+#             out <- c(lambda = val)
+#             if (!is.null(bymfns)) {
+#               out2 <- attr(bymfns, 'inits')
+#               names(out2) <- paste0('par', seq_along(out2))
+#               out <- c(out, out2)
+#             }
+#           } else {
+#             if (model == 'bym4') {
+#               out <- c(lambda = 1)
+#             } else {
+#               out <- c(lambda = val, rho = -2.3)
+#               # out <- c(lambda = -3, rho = val)
+#             }
+#           }
+#         }
+#       }
 #     }
 #   }
-#   out
+#   if (any(order > 1) & is.na(alpha))
+#     out <- c(out, - order[-1])
+#   out        
 # }
 # 
-# .matpow <- function(W0, pow) {
-#   W <- W0
-#   if (pow > 1) {
-#     for (i in 2:pow) {
-#       W <- W %*% W0
+# .makeQ_data <- function(nx, ny, model, order, alpha, n_null, W = NULL, bymfns) {
+#   if (is.null(W)) {
+#     n <- nx * ny
+#     # W <- spatstat.sparse::gridadjacencymatrix(c(nx, ny), diagonal = FALSE)
+#     given_W <- FALSE
+#   } else {
+#     n <- nrow(W)
+#     given_W <- TRUE
+#   }
+#   # d <- Matrix::colSums(W)
+#   # ldetD <- sum(log(d))
+#   # D <- Matrix::Diagonal(n, d)
+#   # B <- Matrix::Diagonal(n, 1 / Matrix::colSums(W)) %*% W
+#   id <- seq_along(n_null)
+#   mods <- ords <- alphs <- rep(NA, length(id))
+#   mods[id] <- model
+#   ords[id] <- order
+#   alphs[id] <- alpha
+#   # alphs[ords == 1] <- NA
+#   target <- list(icar = 1, 
+#                  car = c(1, -4), 
+#                  bym = c(1, -4), 
+#                  bym2 = c(1, -4),
+#                  bym3 = c(1),
+#                  bym4 = c(1))[mods]
+#   app <- lapply(ords, function(x) 0 * x[-1])
+#   target <- lapply(seq_along(target), function(i) c(target[[i]], app[[i]]))
+#   # if (any(ords > 1))
+#   #   target[ords > 1] <- lapply(target[ords > 1], function(x) c(x, rep(0, ords[ords > 1] - 1)))
+#   # reps <- sapply(mods, .model2n) + as.integer(ords > 1) - as.integer(is.finite(alphs))
+#   reps <- sapply(target, length)
+#   if (!is.null(bymfns)) {
+#     for (i in 1:length(bymfns)) {
+#       fnsi <- bymfns[[i]]
+#       if (!is.null(fnsi)) {
+#         nargs <- length(unlist(formals(fnsi))) - 1
+#         reps[i] <- reps[i] + nargs
+#       }
 #     }
 #   }
-#   W
-# }
-
-# .makeQ <- function(Wlist, rho, alpha) {
-#   alpha_seq <- alpha^(seq_along(Wlist) - 1)
-#   Wlist <- mapply('*', Wlist, alpha_seq)
-#   W <- Reduce('+', Wlist)
-#   D <- Matrix::Diagonal(x = Matrix::rowSums(W))
-#   D - rho * W
+#   hyper_spl <- rep(id, reps)
+#   Ql <- list()
+#   if (!given_W) {
+#     for (i in 1:max(unlist(order))) {
+#       Ql[[i]] <- .makeQ_order(nx, ny, i)
+#     }
+#   }
+#   # list(D = D, B = B, W = W, n = n, ldetD = ldetD, n_null = n_null, 
+#   #      ord = ords, mod = mods, spl = rho_spl, np = length(id), 
+#   #      target = target, Ql = Ql, nx = nx, ny = ny)
+#   # W <- .Wlist(W, max(ords))
+#   target <- target[reps > 0]
+#   list(n = n, n_null = n_null, W = W,
+#        ord = ords, mod = mods, alph = alphs, spl = hyper_spl, np = length(id), 
+#        target = target, Ql = Ql, nx = nx, ny = ny)
 # }
 # 
-# .makeQ <- function(W0, rho, alpha, order) {
-#   W <- W0
-#   if (order > 1) {
-#     for (i in 2:order)
-#       W <- W + (alpha^(i - 1)) * .matpow(W0, i)
+# # .Wlist <- function(W, pow) {
+# #   out <- list(W)
+# #   if (pow > 1) {
+# #     for (i in 2:pow) {
+# #       out[[i]] <- out[[i - 1]] %*% W
+# #     }
+# #   }
+# #   out
+# # }
+# # 
+# # .matpow <- function(W0, pow) {
+# #   W <- W0
+# #   if (pow > 1) {
+# #     for (i in 2:pow) {
+# #       W <- W %*% W0
+# #     }
+# #   }
+# #   W
+# # }
+# 
+# # .makeQ <- function(Wlist, rho, alpha) {
+# #   alpha_seq <- alpha^(seq_along(Wlist) - 1)
+# #   Wlist <- mapply('*', Wlist, alpha_seq)
+# #   W <- Reduce('+', Wlist)
+# #   D <- Matrix::Diagonal(x = Matrix::rowSums(W))
+# #   D - rho * W
+# # }
+# # 
+# # .makeQ <- function(W0, rho, alpha, order) {
+# #   W <- W0
+# #   if (order > 1) {
+# #     for (i in 2:order)
+# #       W <- W + (alpha^(i - 1)) * .matpow(W0, i)
+# #   }
+# #   # alpha_seq <- alpha^(seq_along(Wlist) - 1)
+# #   # Wlist <- mapply('*', Wlist, alpha_seq)
+# #   # W <- Reduce('+', Wlist)
+# #   D <- Matrix::Diagonal(x = Matrix::rowSums(W))
+# #   D - rho * W
+# # }
+# 
+# .mQ <- function(rho, Qd, alpha.tol = 1e-6) {
+#   mods <- Qd$mod
+#   ords <- Qd$ord
+#   alphs <- Qd$alph
+#   hyper_spl <- lapply(1:Qd$np, function(.) numeric(0))
+#   hyper_spl[!is.na(Qd$mod)] <- .split2(rho, Qd$spl)
+#   # hyper_spl <- .split2(rho, Qd$spl)
+#   Ql <- list()
+#   for (i in 1:Qd$np) {
+#     Ql[[i]] <- .makeQ_any(hyper_spl[[i]], Qd, mods[i], ords[[i]], alphs[[i]], Qd$n_null[i], Qd$R[[i]], alpha.tol)
 #   }
-#   # alpha_seq <- alpha^(seq_along(Wlist) - 1)
-#   # Wlist <- mapply('*', Wlist, alpha_seq)
-#   # W <- Reduce('+', Wlist)
-#   D <- Matrix::Diagonal(x = Matrix::rowSums(W))
-#   D - rho * W
+#   Q <- Matrix::.bdiag(Ql)
+#   attr(Q, 'logdet') <- sum(sapply(Ql, attr, 'logdet'))
+#   attr(Q, 'test') <- unique(unlist(sapply(Ql, attr, 'test')))
+#   attr(Q, 'pars') <- lapply(Ql, attr, "pars")
+#   attr(Q, 'splpars') <- hyper_spl
+#   Q
 # }
-
-.mQ <- function(rho, Qd, alpha.tol = 1e-6) {
-  mods <- Qd$mod
-  ords <- Qd$ord
-  alphs <- Qd$alph
-  # hyper_spl <- lapply(1:Qd$np, function(.) numeric(0))
-  # hyper_spl[!is.na(Qd$mod)] <- .split2(rho, Qd$spl)
-  hyper_spl <- .split2(rho, Qd$spl)
-  Ql <- list()
-  for (i in 1:Qd$np) {
-    Ql[[i]] <- .makeQ_any(hyper_spl[[i]], Qd, mods[i], ords[[i]], alphs[[i]], Qd$n_null[i], Qd$R[[i]], alpha.tol)
-  }
-  Q <- Matrix::.bdiag(Ql)
-  attr(Q, 'logdet') <- sum(sapply(Ql, attr, 'logdet'))
-  attr(Q, 'test') <- unique(unlist(sapply(Ql, attr, 'test')))
-  attr(Q, 'pars') <- lapply(Ql, attr, "pars")
-  attr(Q, 'splpars') <- hyper_spl
-  Q
-}
-
-.makeQ_any <- function(pars, Qd, model, order, alpha, n_null, R, rho.tol = 1e-6) {
-  logdet <- 0
-  alpha.id <- names(pars) == ''
-  if (!is.na(model)) {
-    lambda <- exp(pars['lambda'])
-    if (model == 'car') {
-      rho.tol <- rho.tol + (1 - rho.tol) * pnorm(pars['rho'])
-    } 
-    rho <- 1 - rho.tol
-    if (any(order > 1) & is.na(alpha)) {
-      alpha <- pnorm(pars[alpha.id])
-    } else {
-      if (is.na(alpha))
-        alpha <- 1
-    }
-    Q <- .makeQ(Qd, rho, alpha, order)
-    if (model != 'bym')
-      Q <- Q + Matrix::Diagonal(n = Qd$n, x = 1 - rho)
-    if (model == 'icar') {
-      logdet <- (Qd$n - 1) * pars['lambda']
-    } else {
-      if (model == 'car') {
-        logdet <- .ldchol(Q)#Matrix::determinant(Q)$modulus
-        logdet <- logdet + Qd$n * pars['lambda']
-      }
-    }
-    Q <- lambda * Q
-    if (model == 'bym') {
-      Q <- Q + Matrix::Diagonal(n = Qd$n, x = rho.tol + exp(pars['rho']))
-      logdet <- .ldchol(Q)
-    }
-    if (model == 'bym2') {
-      lkappa <- pars['lambda']
-      kappa <- exp(lkappa)
-      lrho <- pnorm(pars['rho'], log.p = TRUE)
-      l1mrho <- pnorm(pars['rho'], log.p = TRUE, lower.tail = FALSE)
-      # rho <- exp(lrho)
-      rhoc <- pnorm(pars['rho'], lower.tail = FALSE)
-      # p1 <- rho * tau#tau / rho
-      # lp1 <- pars['lambda'] - log(rho)
-      # p2 <- tau / pnorm(pars['rho'], lower.tail = FALSE)
-      # lp2 <- pars['lambda'] - log(1 - rho)
-      # logdet <- (Qd$n - 1) * lp1 + Qd$n * lp2
-      # p1 <- kappa / rho#lambda
-      # p2 <- kappa / rhoc# exp(pars['rho'])
-      logdet <- (Qd$n - 1) * (lkappa - lrho) + Qd$n * (lkappa - l1mrho)
-      Q <- Q * exp(-lrho)
-      Q <- list(Q, Matrix::Diagonal(n = Qd$n, x = exp(lkappa - l1mrho)))
-      Q <- Matrix::bdiag(Q)
-      # attr(Q, 'test') <- p2
-    }
-    if (model %in% paste('bym', 3:4, sep = '')) {
-      # tau <- lambda
-      p1 <- lambda
-      logdet <- (Qd$n - 1) * log(p1)
-      Q <- list(Q, Matrix::Diagonal(n = Qd$n, x = 0))
-      Q <- Matrix::bdiag(Q)
-      # attr(Q, 'test') <- 0
-    }
-  } else {
-    Q <- Matrix::Diagonal(0)
-  }
-  if (n_null > 0) {
-    Q <- Matrix::.bdiag(list(Q, Matrix::Diagonal(n_null, numeric(n_null))))
-    Q <- as(Q, 'CsparseMatrix')
-  }
-  attr(Q, 'logdet') <- logdet
-  if (!is.na(model)) {
-    # if (model == 'bym2')
-    #   attr(Q, 'test') <- p2
-    if (model == 'bym4')
-      attr(Q, 'pars') <- pars
-  }
-  Q
-}
-
+# 
+# .makeQ_any <- function(pars, Qd, model, order, alpha, n_null, R, rho.tol = 1e-6) {
+#   logdet <- 0
+#   alpha.id <- names(pars) == ''
+#   if (!is.na(model)) {
+#     lambda <- exp(pars['lambda'])
+#     if (model == 'car') {
+#       rho.tol <- rho.tol + (1 - rho.tol) * pnorm(pars['rho'])
+#     } 
+#     rho <- 1 - rho.tol
+#     if (any(order > 1) & is.na(alpha)) {
+#       alpha <- pnorm(pars[alpha.id])
+#     } else {
+#       if (is.na(alpha))
+#         alpha <- 1
+#     }
+#     Q <- .makeQ(Qd, rho, alpha, order)
+#     if (model != 'bym')
+#       Q <- Q + Matrix::Diagonal(n = Qd$n, x = 1 - rho)
+#     if (model == 'icar') {
+#       logdet <- (Qd$n - 1) * pars['lambda']
+#     } else {
+#       if (model == 'car') {
+#         logdet <- .ldchol(Q)#Matrix::determinant(Q)$modulus
+#         logdet <- logdet + Qd$n * pars['lambda']
+#       }
+#     }
+#     Q <- lambda * Q
+#     if (model == 'bym') {
+#       Q <- Q + Matrix::Diagonal(n = Qd$n, x = rho.tol + exp(pars['rho']))
+#       logdet <- .ldchol(Q)
+#     }
+#     if (model == 'bym2') {
+#       lkappa <- pars['lambda']
+#       kappa <- exp(lkappa)
+#       lrho <- pnorm(pars['rho'], log.p = TRUE)
+#       l1mrho <- pnorm(pars['rho'], log.p = TRUE, lower.tail = FALSE)
+#       # rho <- exp(lrho)
+#       rhoc <- pnorm(pars['rho'], lower.tail = FALSE)
+#       # p1 <- rho * tau#tau / rho
+#       # lp1 <- pars['lambda'] - log(rho)
+#       # p2 <- tau / pnorm(pars['rho'], lower.tail = FALSE)
+#       # lp2 <- pars['lambda'] - log(1 - rho)
+#       # logdet <- (Qd$n - 1) * lp1 + Qd$n * lp2
+#       # p1 <- kappa / rho#lambda
+#       # p2 <- kappa / rhoc# exp(pars['rho'])
+#       logdet <- (Qd$n - 1) * (lkappa - lrho) + Qd$n * (lkappa - l1mrho)
+#       Q <- Q * exp(-lrho)
+#       Q <- list(Q, Matrix::Diagonal(n = Qd$n, x = exp(lkappa - l1mrho)))
+#       Q <- Matrix::bdiag(Q)
+#       # attr(Q, 'test') <- p2
+#     }
+#     if (model %in% paste('bym', 3:4, sep = '')) {
+#       # tau <- lambda
+#       p1 <- lambda
+#       logdet <- (Qd$n - 1) * log(p1)
+#       Q <- list(Q, Matrix::Diagonal(n = Qd$n, x = 0))
+#       Q <- Matrix::bdiag(Q)
+#       # attr(Q, 'test') <- 0
+#     }
+#   } else {
+#     Q <- Matrix::Diagonal(0)
+#   }
+#   if (n_null > 0) {
+#     Q <- Matrix::.bdiag(list(Q, Matrix::Diagonal(n_null, numeric(n_null))))
+#     Q <- as(Q, 'CsparseMatrix')
+#   }
+#   attr(Q, 'logdet') <- logdet
+#   if (!is.na(model)) {
+#     # if (model == 'bym2')
+#     #   attr(Q, 'test') <- p2
+#     if (model == 'bym4')
+#       attr(Q, 'pars') <- pars
+#   }
+#   Q
+# }
+# 
+# # .makeQ <- function(Qd, rho, alpha, order) {
+# #   W0 <- W <- Qd$W
+# #   if (any(order > 1)) {
+# #     for (i in order)
+# #       W <- W + (alpha^(i - 1)) * .matpow(W0, i)
+# #   }
+# #   # alpha_seq <- alpha^(seq_along(Wlist) - 1)
+# #   # Wlist <- mapply('*', Wlist, alpha_seq)
+# #   # W <- Reduce('+', Wlist)
+# #   D <- Matrix::Diagonal(x = Matrix::rowSums(W))
+# #   D - rho * W
+# # }
+# 
+# .makeQ_order <- function(nx, ny, order) {
+#   if (order == 1) {
+#     Dx <- .make_D1(nx)
+#     Dy <- .make_D1(ny)
+#   }
+#   if (order == 2) {
+#     Dx <- .make_D2(nx)
+#     Dy <- .make_D2(ny)
+#   }
+#   if (order == 3) {
+#     Dx <- .make_D3(nx)
+#     Dy <- .make_D3(ny)
+#   }
+#   Qx <- Matrix::kronecker(Matrix::Diagonal(ny), Matrix::crossprod(Dx))
+#   Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
+#   as(Qx + Qy, "generalMatrix")
+# }
+# 
 # .makeQ <- function(Qd, rho, alpha, order) {
-#   W0 <- W <- Qd$W
-#   if (any(order > 1)) {
-#     for (i in order)
-#       W <- W + (alpha^(i - 1)) * .matpow(W0, i)
+#   if (!is.null(Qd$W)) {
+#     D <- Matrix::Diagonal(x = Matrix::rowSums(Qd$W))
+#     Q <- D - rho * Qd$W
+#   } else {
+#     Q <- 0 * Qd$Ql[[1]]
+#     alpha <- c(1, alpha)
+#     # if (any(order > 1)) {
+#       for (i in seq_along(order))
+#         Q <- Q + alpha[i] * Qd$Ql[[order[i]]]
+#   # }
 #   }
+#   return(Q)
 #   # alpha_seq <- alpha^(seq_along(Wlist) - 1)
 #   # Wlist <- mapply('*', Wlist, alpha_seq)
 #   # W <- Reduce('+', Wlist)
-#   D <- Matrix::Diagonal(x = Matrix::rowSums(W))
-#   D - rho * W
+#   # D <- Matrix::Diagonal(x = Matrix::rowSums(W))
+#   # D - rho * W
 # }
-
-.makeQ_order <- function(nx, ny, order) {
-  if (order == 1) {
-    Dx <- .make_D1(nx)
-    Dy <- .make_D1(ny)
-  }
-  if (order == 2) {
-    Dx <- .make_D2(nx)
-    Dy <- .make_D2(ny)
-  }
-  if (order == 3) {
-    Dx <- .make_D3(nx)
-    Dy <- .make_D3(ny)
-  }
-  Qx <- Matrix::kronecker(Matrix::Diagonal(ny), Matrix::crossprod(Dx))
-  Qy <- Matrix::kronecker(Matrix::crossprod(Dy), Matrix::Diagonal(nx))
-  as(Qx + Qy, "generalMatrix")
-}
-
-.makeQ <- function(Qd, rho, alpha, order) {
-  if (!is.null(Qd$W)) {
-    D <- Matrix::Diagonal(x = Matrix::rowSums(Qd$W))
-    Q <- D - rho * Qd$W
-  } else {
-    Q <- 0 * Qd$Ql[[1]]
-    alpha <- c(1, alpha)
-    # if (any(order > 1)) {
-      for (i in seq_along(order))
-        Q <- Q + alpha[i] * Qd$Ql[[order[i]]]
-  # }
-  }
-  return(Q)
-  # alpha_seq <- alpha^(seq_along(Wlist) - 1)
-  # Wlist <- mapply('*', Wlist, alpha_seq)
-  # W <- Reduce('+', Wlist)
-  # D <- Matrix::Diagonal(x = Matrix::rowSums(W))
-  # D - rho * W
-}

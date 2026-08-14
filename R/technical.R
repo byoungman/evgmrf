@@ -18,11 +18,23 @@
 #'   for parameters greater than 1, and a forward difference is applied otherwise. 
 #'   Defaults to \code{"ad-hoc"}.
 #' @param reml_steptol A numeric value defining the minimum step length tolerance 
-#'   for REML updates. Defaults to \code{5e-3}.
+#'   for REML updates. Defaults to \code{1e-4}.
 #' @param reml_stepmax A numeric value specifying the maximum permissible step 
-#'   length taken during a single REML update iteration. Defaults to \code{1}.
+#'   length taken during a single REML update iteration. Defaults to \code{2.5}.
 #' @param reml_itlim An integer setting the hard iteration limit for the REML 
 #'   optimization process. Defaults to \code{100}.
+#' @param reml_gradtol A scalar setting the gradient tolerance for the REML 
+#'   optimization process. Defaults to \code{1e-2}.
+#' @param reml_dgradtol A scalar setting the gradient tolerance difference 
+#'   over four iterations for the REML optimization process. Defaults to \code{1e-4}.
+#' @param reml_fntol A scalar setting the function tolerance for the REML 
+#'   optimization process. Defaults to \code{1e-6}.
+#' @param reml_alpha0 A scalar setting the initial line search multiplier for the REML 
+#'   optimization process. Defaults to \code{1}.    
+#' @param reml_rho0 A scalar setting the multiplicative rate at thish the line search 
+#'   multiplier is reduced for the REML optimization process. Defaults to \code{0.5}.    
+#' @param line_search_mult A multiplier for the step when line searches take
+#'   place. Defaults to \code{1}.
 #' @param inner_optim A character string selecting the linear algebraic solver 
 #'   for inner loop parameters; defaults to \code{"chol"} (Cholesky). If explicitly 
 #'   set to \code{"Cholesky"}, \code{super} is automatically forced to \code{TRUE}.
@@ -87,8 +99,12 @@
 #' 
 #' @export
 evgmrf.control <- function(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-3, 
-                           reml_direction = 'ad-hoc', reml_steptol = 5e-3, 
-                           reml_stepmax = 1, reml_itlim = 1e2, inner_optim = 'chol',
+                           reml_direction = 'ad-hoc', reml_steptol = 1e-4, 
+                           reml_stepmax = 2.5, reml_itlim = 1e2, reml_gradtol = 1e-2,
+                           reml_dgradtol = 1e-4, reml_fntol = 1e-6, reml_alpha0 = 1,
+                           reml_rho0 = .1,
+                           line_search_mult = 1,
+                           inner_optim = 'chol',
                            alpha.tol = 1e-6, grad_mult = 0, par_mult = .1, 
                            update = FALSE, openmp = FALSE, threads = 0, 
                            perturb.tol = 1e-2, perturb.mult = 5, perturb.method = 'chol', 
@@ -100,7 +116,10 @@ evgmrf.control <- function(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-
   out <- list(
     eps = eps, it0 = it0, step_size = step_size, reml_eps = reml_eps, 
     reml_direction = reml_direction, reml_steptol = reml_steptol, 
-    reml_stepmax = reml_stepmax, reml_itlim = reml_itlim, inner_optim = inner_optim,
+    reml_stepmax = reml_stepmax, reml_itlim = reml_itlim, 
+    reml_gradtol = reml_gradtol, reml_fntol = reml_fntol, reml_dgradtol = reml_dgradtol,
+    reml_alpha0 = reml_alpha0, reml_rho0 = reml_rho0,
+    line_search_mult = line_search_mult, inner_optim = inner_optim,
     alpha.tol = alpha.tol, grad_mult = grad_mult, par_mult = par_mult, 
     update = update, openmp = openmp, threads = threads, 
     perturb.tol = perturb.tol, perturb.mult = perturb.mult, perturb.method = perturb.method, 
