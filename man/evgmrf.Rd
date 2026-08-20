@@ -19,7 +19,7 @@ evgmrf(
   args = list(),
   control = list(),
   trace = 0,
-  outer = "newton",
+  outer = "bfgs",
   gamma = 1,
   nx = NULL,
   ny = NULL,
