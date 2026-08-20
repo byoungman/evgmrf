@@ -67,10 +67,10 @@ simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob =
     type0 <- 'response'
   dH <- object$diagHessian
   cpH <- object$cholprecondHessian
-  nH <- length(dH)
+  nH <- nrow(cpH)
   z <- matrix(rnorm(nsim * nH), ncol = nsim)
   mat <- .solve_pchol(cpH, z)
-  mat <- object$beta + dH * mat
+  mat <- object$beta + Matrix::diag(dH) * mat
   lst <- list()
   for (i in 1:object$np) {
     lst[[i]] <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
