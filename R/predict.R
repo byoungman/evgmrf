@@ -152,7 +152,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
   }
   if (se.fit) {
     nv <- nrow(object$Hessian)
-    dH <- object$diagHessian
+    dH <- Matrix::diag(object$diagHessian)
     cpH <- object$cholprecondHessian
     if (progress) cat('Calculating standard errors...\n')
     id_bym2 <- object$likdata$id_bym2

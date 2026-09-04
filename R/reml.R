@@ -6,11 +6,11 @@
     ctrl$itlim <- 1e3
   fit <- evgam:::.newton_step_inner(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, Q = Q, control = ctrl)
   beta1 <- fit$par
-  out <- fit$objective
+  out <- likdata$vvv * fit$objective
   attr(out, 'unpenalised') <- attr(fit$objective, 'unpenalised')
   attr(out, 'penalised') <- as.numeric(fit$objective)
-  out <- out + .5 * attr(fit$gradient, 'ldet')
-  out <- out - .5 * attr(Q, 'logdet')
+  out <- out + (1 / likdata$gamma) * .5 * attr(fit$gradient, 'ldet')
+  out <- out - (1 / likdata$gamma) * .5 * attr(Q, 'logdet')
   out <- out + likdata$control$par_mult * sum(unlist(mapply('-', split(pars, Qd$spl), Qd$target))^2)
   out <- out + likdata$control$grad_mult * as.numeric(any(abs(fit$gradient) > 1))
   attr(out, 'beta') <- fit$par

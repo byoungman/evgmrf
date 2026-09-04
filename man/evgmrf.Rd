@@ -27,7 +27,8 @@ evgmrf(
   infill = FALSE,
   cv = FALSE,
   auto.weights = FALSE,
-  bymfns = NULL
+  bymfns = NULL,
+  vvv = 1
 )
 }
 \arguments{
@@ -76,8 +77,7 @@ Larger values provide more comprehensive iterations. Defaults to \code{0} (silen
 \item{outer}{A character string specifying the smoothing parameter optimizer.
 One of \code{"newton"}, \code{"nelder-mead"}, or \code{"bfgs"} (Default).}
 
-\item{gamma}{A scalar multiplier applied directly to the log-likelihood function
-representing localized constant weights; defaults to \code{1}.}
+\item{gamma}{EDF multiplier. To do.}
 
 \item{nx, ny}{Integers giving numbers of rows and columns in grid; see Details.}
 

@@ -657,6 +657,6 @@
     }
   }
   if (any(order > 1) & is.na(alpha))
-    out <- c(out, - order[-1])
+    out <- c(out, - .75 * (order[-1] - 2))
   out        
 }

@@ -47,6 +47,7 @@
 #'   details of its parameters. EXPERIMENTAL. Defaults to \code{FALSE}.
 #' @param alpha Fixed variance ratios for 2+-order autoregressive forms. See 
 #'   \code{\link{model.evgmrf}}.
+#' @param gamma EDF multiplier. To do.
 #' 
 #' @details 
 #' In general the last two dimensions of \code{z} will define the grid size in terms
@@ -90,7 +91,8 @@ evgmrf <- function(z,
                    nx = NULL, ny = NULL, index = NULL, infill = FALSE,
                    cv = FALSE, 
                    auto.weights = FALSE,
-                   bymfns = NULL
+                   bymfns = NULL,
+                   vvv = 1
 ) {
   model <- tolower(model)
   args <- replace(.args0, names(args), args)
@@ -179,7 +181,7 @@ evgmrf <- function(z,
       stop("args$u is incompatible with z.")
     # zl <- mapply(function(x, y) x[x > y], zl, u)
   }
-  .ld <- list(n = n, z = zl, w = wl, mult = 1 / gamma, args = args, bym4 = FALSE)
+  .ld <- list(n = n, z = zl, w = wl, mult = 1, args = args, bym4 = FALSE, gamma = gamma, vvv = vvv)
   .ld$bymfns <- bymfns
   # .ld$z_cube <- array(unlist(.ld$z), c(dim(.ld$z[[1]])[1:2], length(.ld$z)))
   if (family == 'gpd') {
@@ -570,6 +572,7 @@ evgmrf <- function(z,
       out$cholprecondHessian <- Matrix::Cholesky(out$precondHessian, LDL = FALSE)
     }
   }
+  out$Hessian <- attr(out$objective, 'Hessian')
   out$X <- .ld$Xl
   out$holes <- holes
   out$nx <- ifelse(is.null(nx), .ld$n, nx)

@@ -87,8 +87,10 @@ multiplier is reduced for the REML optimization process. Defaults to \code{0.5}.
 place. Defaults to \code{1}.}
 
 \item{inner_optim}{A character string selecting the linear algebraic solver
-for inner loop parameters; defaults to \code{"chol"} (Cholesky). If explicitly
-set to \code{"Cholesky"}, \code{super} is automatically forced to \code{TRUE}.}
+for inner loop parameters; defaults to \code{"chol"} (which calls a wrapper
+to \code{Eigen::SimplicialLLT}). If explicitly set to \code{"Cholesky"},
+\code{super} is automatically forced to \code{TRUE} and \code{Matrix::Cholesky}
+is used with \code{super = TRUE}. Only recommended with \code{Matrix(>=1.8-0)}.}
 
 \item{alpha.tol}{A numeric convergence tolerance threshold for the model's
 spatial \code{alpha} parameters. Defaults to \code{1e-6}.}

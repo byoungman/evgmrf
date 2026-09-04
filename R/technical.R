@@ -36,8 +36,10 @@
 #' @param line_search_mult A multiplier for the step when line searches take
 #'   place. Defaults to \code{1}.
 #' @param inner_optim A character string selecting the linear algebraic solver 
-#'   for inner loop parameters; defaults to \code{"chol"} (Cholesky). If explicitly 
-#'   set to \code{"Cholesky"}, \code{super} is automatically forced to \code{TRUE}.
+#'   for inner loop parameters; defaults to \code{"chol"} (which calls a wrapper
+#'   to \code{Eigen::SimplicialLLT}). If explicitly set to \code{"Cholesky"}, 
+#'   \code{super} is automatically forced to \code{TRUE} and \code{Matrix::Cholesky}
+#'   is used with \code{super = TRUE}. Only recommended with \code{Matrix(>=1.8-0)}.
 #' @param alpha.tol A numeric convergence tolerance threshold for the model's 
 #'   spatial \code{alpha} parameters. Defaults to \code{1e-6}.
 #' @param grad_mult A numeric penalty coefficient applied during outer REML optimization. 
