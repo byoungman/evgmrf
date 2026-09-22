@@ -1,7 +1,7 @@
 Package: evgmrf
 Type: Package
 Title: Gaussian Markov Random Field Models for Extreme Values
-Version: 0.0.2
+Version: 0.1.0
 Authors@R: c(
     person("Ben", "Youngman", , "b.youngman@exeter.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0215-8189")),
