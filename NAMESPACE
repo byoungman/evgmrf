@@ -18,8 +18,6 @@ import(graphics)
 import(stats)
 import(utils)
 importFrom(Rcpp,sourceCpp)
-importFrom(methods,
-  as,
-  is
-)
+importFrom(methods,as)
+importFrom(methods,is)
 useDynLib(evgmrf, .registration = TRUE)
