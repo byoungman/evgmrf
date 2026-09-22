@@ -398,6 +398,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// index2W
+arma::sp_mat index2W(const arma::mat& ind);
+RcppExport SEXP _evgmrf_index2W(SEXP indSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type ind(indSEXP);
+    rcpp_result_gen = Rcpp::wrap(index2W(ind));
+    return rcpp_result_gen;
+END_RCPP
+}
 // tppugmrfld0
 double tppugmrfld0(arma::mat pars, arma::vec uv, arma::vec wv);
 RcppExport SEXP _evgmrf_tppugmrfld0(SEXP parsSEXP, SEXP uvSEXP, SEXP wvSEXP) {
@@ -775,6 +786,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_evgmrf_tgpd0", (DL_FUNC) &_evgmrf_tgpd0, 2},
     {"_evgmrf_tgpd1", (DL_FUNC) &_evgmrf_tgpd1, 2},
     {"_evgmrf_tgpd2", (DL_FUNC) &_evgmrf_tgpd2, 2},
+    {"_evgmrf_index2W", (DL_FUNC) &_evgmrf_index2W, 1},
     {"_evgmrf_tppugmrfld0", (DL_FUNC) &_evgmrf_tppugmrfld0, 3},
     {"_evgmrf_tppugmrfld12", (DL_FUNC) &_evgmrf_tppugmrfld12, 3},
     {"_evgmrf_tppzgmrfld0", (DL_FUNC) &_evgmrf_tppzgmrfld0, 3},

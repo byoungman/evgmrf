@@ -12,8 +12,12 @@
 #'   predictions alongside point estimates. Defaults to `FALSE`.
 #' @param prob A scalar or vector of probabilities mapping to the target extreme value 
 #'   quantiles to be estimated. Defaults to `NULL`.
+#' @param nx,ny Positive integers giving the numbers of grid points in the
+#'   first (\code{nx}) and second (\code{ny}) dimensions of the spatial grid. 
+#'   Defaults to \code{object$nx} and \code{object$nx}, respectively. 
 #' @param index A matrix containing spatial row and column coordinate index maps 
 #'   used to reconstruct missing grid layouts. Defaults to \code{object$index}.
+#' @param set2NA Set parameters to `NA` where there are no data. Defaults to `FALSE`.
 #' @param simplify2array Logical; if `TRUE`, coerces and binds the underlying 
 #'   prediction surfaces into a single multidimensional array matrix. Defaults to `FALSE`.
 #' @param xid,yid Integer index vectors identifying localized grid subsets to extract. 
@@ -32,10 +36,12 @@
 #' @param decompose Logical; if `TRUE`, random additive terms inside Besag-York-Mollié 
 #'   (BYM) formulations are broken down into individual spatial and random elements. 
 #'   Defaults to `FALSE`.
+#' @param random2zero Logical vector; first component corresponds to fitted values
+#'   and second to standard errors. When `TRUE`, random additive terms or corresponding 
+#'   standard errors inside Besag-York-Mollié (BYM) formulations are set to zero. 
+#'   Defaults to `c(FALSE, FALSE)`.
 #' @param drop.parametric Logical; if `TRUE` and \code{decompose = TRUE}, deletes 
 #'   fixed parametric background terms from the final evaluated list. Defaults to `FALSE`.
-#' @param sdif A numeric standard deviation inflation factor modifier scaled across 
-#'   the linear predictor error structures. Defaults to `1`.
 #' @param openmp Logical; switches whether analytical solvers exploit shared memory 
 #'   multi-core CPU parallelism extensions. Defaults to \code{object$control$openmp}.
 #' @param threads An integer controlling maximum system CPU threads allocated 
@@ -50,6 +56,8 @@
 #' automatically. When calculating quantile-scale standard errors under \code{se.method = "direct"}, 
 #' the function calls analytical gradients attached as a functional derivative attribute to 
 #' \code{object$quantile0}.
+#' 
+#' See \code{evgmrf} for more details on \code{nx}, \code{ny} and \code{index}.
 #' 
 #' @references 
 #' Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
@@ -67,8 +75,8 @@
 #' 
 #' @examples
 #' \dontrun{
-#' data(COtop5prcp)
-#' COmxprcp <- COtop5prcp$prcp[, 1, , ]
+#' data(COorder)
+#' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp)
 #' 
 #' # Evaluate location and scale predictions
@@ -79,21 +87,51 @@
 #' }
 #' 
 #' @export
-predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = object$index, 
-                           simplify2array = FALSE, xid = object$xid, yid = object$yid,
-                           loop = TRUE, progress = loop, chunksize = 1e2, se.method = 'direct',
-                           nsim = 1e3, decompose = FALSE, drop.parametric = FALSE, sdif = 1, 
-                           openmp = object$control$openmp, threads = object$control$threads, ...) {
-  if (se.fit & decompose)
-    stop("Decomposed parameters can only be plotted for type = 'link'.")
+predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, index = NULL, nx = NULL,
+                           ny = NULL, set2NA = FALSE, 
+                           simplify2array = FALSE, xid = NULL, yid = NULL,
+                           loop = TRUE, progress = FALSE, chunksize = 1e2, se.method = 'direct',
+                           nsim = 1e3, decompose = FALSE, random2zero = c(FALSE, FALSE), drop.parametric = TRUE, 
+                           openmp = object$control$openmp, threads = object$control$threads,  ...) {
+  if (type != "link" & decompose)
+    stop("Decomposed parameters only available for type = 'link'.")
   type0 <- type
   if (!is.null(prob))
     type <- 'quantile'
   if (type == 'quantile')
     type0 <- 'response'
+  if (is.null(index))
+    index <- object$index
   openmp <- object$likdata$openmp
+  if (random2zero[1]) {
+    if (decompose)
+      stop("Can't have decompose = TRUE and random2zero = TRUE.")
+    id_bym2 <- unlist(object$likdata$id_bym2)
+    if (!any(id_bym2))
+      stop('No random effects to set to zero.')
+    object$beta[id_bym2] <- 0
+  }
   out <- .fitted_values(object$beta, object$likdata, decompose)
+  if (set2NA)
+    out[, object$no_data] <- NA
   np <- nrow(out)
+  if (!is.null(index)) {
+    object$nx <- nx
+    if (is.null(object$nx)) 
+      object$nx <- max(index[, 1])
+    object$ny <- ny
+    if (is.null(object$ny))
+      object$ny <- max(index[, 2])
+    object$index <- index
+    object$holes <- TRUE
+    no_data <- matrix(TRUE, object$nx, object$ny)
+    no_data[index] <- FALSE
+    object$no_data <- as.vector(no_data)
+  }
+  if (is.null(yid))
+    yid <- 1:object$ny
+  if (is.null(xid))
+    xid <- 1:object$nx
   if (!object$holes) {
     out <- lapply(1:np, function(i) matrix(out[i, ], object$nx))
   } else {
@@ -101,9 +139,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       outm <- out
       out <- list()
       for (i in 1:np) {
-        nx <- ifelse(is.null(object$nx), max(index[, 1]), object$nx)
-        ny <- ifelse(is.null(object$ny), max(index[, 2]), object$ny)
-        temp <- matrix(NA, nx, ny)
+        temp <- matrix(NA, object$nx, object$ny)
         temp[index] <- outm[i, ]
         out[[i]] <- temp
       }
@@ -115,8 +151,6 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       nms[[i]] <- paste(nms[[i]], object$par_type[[i]], sep = ': ')
   }
   names(out) <- unlist(nms)
-  if (decompose & drop.parametric)
-    out <- out[unlist(object$par_type) != 'parametric']
   if (type %in% c('response', 'quantile')) {
     if (se.fit) {
       out0 <- out
@@ -150,24 +184,14 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       out <- array(unlist(out), dim = c(object$np, object$nx, object$ny))
     }
   }
+  if (set2NA)
+    out <- lapply(out, function(x) {x[object$no_data] <- NA; x})
   if (se.fit) {
+    if (progress) 
+      cat('Calculating standard errors...\n')
     nv <- nrow(object$Hessian)
     dH <- Matrix::diag(object$diagHessian)
     cpH <- object$cholprecondHessian
-    if (progress) cat('Calculating standard errors...\n')
-    id_bym2 <- object$likdata$id_bym2
-    if (any(unlist(id_bym2))) {
-      id_bym2_mat <- lapply(id_bym2, function(x) length(x) / object$n)
-      XX <- lapply(id_bym2_mat, function(i) lapply(1:i, function(.) Matrix::Diagonal(n = object$n, x = 1)))
-      XX <- lapply(XX, function(x) do.call(rbind, x))
-      XX <- Matrix::bdiag(XX)
-      H <- Matrix::crossprod(XX, object$Hessian) %*% XX
-      nv <- nrow(H)
-      dH <- pmax(Matrix::diag(H), 1e-8)
-      D <- Matrix::Diagonal(nrow(H), 1 / sqrt(dH))
-      H <- D %*% H %*% D
-      cpH <- Matrix::Cholesky(H, super = object$likdata$control$super, LDL = FALSE)
-    }
     if (type %in% c('link', 'response')) {
       if (se.method == 'simulation') {
         if (progress) 
@@ -175,7 +199,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
         spl <- split(1:nsim, c(0:(nsim - 1)) %/% chunksize)
         se <- numeric(nv)
         for (j in 1:length(spl)) {
-          z <- matrix(sample(c(-sdif, sdif), length(spl[[j]]) * nv, replace = TRUE), nv)
+          z <- matrix(sample(c(-1, 1), length(spl[[j]]) * nv, replace = TRUE), nv)
           mat <- .solve_pchol(cpH, z)
           se <- se + rowSums(mat * mat)
           if (progress) setTxtProgressBar(pb, j)
@@ -183,27 +207,73 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
         se <- object$diagHessian * sqrt(se / nsim)
       } else {
         if (!openmp) {
-        if (progress)
-          pb <- txtProgressBar(min = 0, max = nv / chunksize, style = 3)
-        if (!loop) {
-          t1 <- Matrix::solve(cpH, Matrix::Diagonal(nv))
-          se <- dH * sqrt(Matrix::diag(t1))
+          X <- Matrix::t(object$likdata$X)
+            se_id <- rep(1:object$likdata$np, each = object$likdata$n)
+            Xlc <- object$likdata$Xlc
+            Xlc <- lapply(Xlc, function(x) x[sapply(x, ncol) > 0])
+            if (!decompose) {
+              Xlc <- lapply(Xlc, function(x) do.call(cbind, x))
+              out_i <- seq_along(Xlc)
+            } else {
+              out_i <- rep(seq_along(Xlc), sapply(Xlc, length))
+              Xlc <- unlist(Xlc, recursive = FALSE)
+            }
+            reps <- sapply(Xlc, ncol)
+            X_col_id <- rep(seq_along(reps), reps)
+            splitter <- rep(seq_along(reps), each = object$likdata$n)
+            se <- rep(NA, length(splitter))
+            if (progress)
+              pb <- txtProgressBar(min = 0, max = length(se), style = 3)
+            X0 <- object$likdata$X
+            n_par <- ncol(X0)
+            n_obs <- object$likdata$n
+            ind0 <- seq_len(n_obs)
+
+            for (i in seq_along(reps)) {
+              
+              cols_i <- which(X_col_id == i)
+              X0i <- X0[, cols_i, drop = FALSE]
+              n_i <- length(cols_i)
+              rows_i <- se_id == out_i[i]
+              ind <- ind0 + (i - 1L) * n_obs
+              Ei <- Matrix::sparseMatrix(i = cols_i, j = seq_len(n_i), x = 1,
+                dims = c(n_par, n_i), giveCsparse = TRUE)
+              rows <- se_id == out_i[i]
+              ind <- ind0 + (i - 1L) * n_obs
+                            X0r <- X0i[rows, , drop = FALSE]
+              Bi <- dH * Matrix::tcrossprod(Ei, X0r)
+              
+              if (loop && (n_obs > chunksize)) {
+                
+                for (first in seq.int(1L, n_obs, by = chunksize)) {
+                  
+                  last <- min(first + chunksize - 1L, n_obs)
+                  block <- first:last
+                  cols_block <- cols_i[block]
+                  t1 <- Matrix::solve(cpH, Bi[, block, drop = FALSE])
+                  se[ind[block]] <- sqrt(Matrix::colSums(t1 * Bi[, block, drop = FALSE]))
+                  
+                  if (progress)
+                    setTxtProgressBar(pb, tail(ind[block], 1))
+                  
+                }
+              
+              } else {
+                
+                se[ind] <- sqrt(Matrix::colSums(Bi * Matrix::solve(cpH, Bi)))
+                
+                if (progress)
+                  setTxtProgressBar(pb, tail(ind, 1))
+                
+              }
+              
+            }
+
         } else {
-          se <- rep(NA, nv)
-          spl <- split(1:nv, c(0:(nv - 1)) %/% chunksize)
-          for (j in 1:length(spl)) {
-            ind <- spl[[j]]
-            Ej <- Matrix::sparseMatrix(i = ind, j = seq_along(ind), x = 1, dims = c(nv, length(ind)))
-            v <- Matrix::solve(cpH, Ej)
-            se[ind] <- sdif * dH[ind] * sqrt(v[cbind(ind, seq_along(ind))])
-            if (progress) setTxtProgressBar(pb, j)
-          }
+          stop("Can't do openmp yet")
         }
-      } else {
-        se <- dH * .chol_idiag_omp(object$precondHessian, object$control$threads)
       }
-      }
-      se <- split(se, rep(1:object$np, each = object$n))
+      se <- split(se, splitter)
       if (type == 'response') {
         for (i in 1:object$np) 
           se[[i]] <- se[[i]] * attr(object$unlink, 'deriv')[[i]](out0[[i]])
@@ -225,7 +295,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
           for (j in 1:length(spl)) {
             z <- matrix(rnorm(length(spl[[j]]) * nv), ncol = length(spl[[j]]))
             lst <- list()
-            mat <- .solve_pchol(cpH, sdif * z)
+            mat <- .solve_pchol(cpH, z)
             mat <- object$beta + dH * mat
             for (i in 1:object$np) {
               lst[[i]] <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
@@ -251,14 +321,14 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
               indc <- rep(seq_along(ind), each = object$np)
               Ej <- Matrix::sparseMatrix(i = indr, j = indc, x = Jj, dims = c(nv, length(ind)))
               temp <- Matrix::solve(cpH, Ej)[indr, , drop = FALSE]
-              sek[ind] <- sdif * sqrt(Matrix::colSums(Ej[indr, , drop = FALSE ] * temp))
+              sek[ind] <- sqrt(Matrix::colSums(Ej[indr, , drop = FALSE ] * temp))
               if (progress) setTxtProgressBar(pb, j)
             }
           } else {
             indr <- as.integer(outer(ind0, 1:object$n, FUN = '+'))
             indc <- rep(1:object$n, each = object$np)
             EJ <- Matrix::sparseMatrix(i = indr, j = indc, x = as.vector(t(J)), dims = c(nv, object$n))
-            sek <- sdif * sqrt(Matrix::colSums(EJ * Matrix::solve(cpH, EJ)))
+            sek <- sqrt(Matrix::colSums(EJ * Matrix::solve(cpH, EJ)))
           }
         }
         se[[k]] <- matrix(sek, object$nx, object$ny)[xid, yid, drop = FALSE]
@@ -269,8 +339,17 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       close(pb)
       cat('Done.\n')
     }
-    out <- list(fitted = out, se = se)  
+    if (set2NA)
+      se <- lapply(se, function(x) {x[object$no_data] <- NA; x})
   }
+  if (drop.parametric) {
+    gonner <- replace(logical(length(out)), grep('parametric', names(out)), TRUE)
+    out <- out[!gonner]
+    if (se.fit) 
+      se <- se[!gonner]
+  }
+  if (se.fit)
+    out <- list(fitted = out, se = se)
   out
 }
 

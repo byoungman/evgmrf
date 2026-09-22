@@ -31,11 +31,7 @@ evgmrf.control(
   perturb.method = "chol",
   perturb.tol.eigen = 0.001,
   perturb.mult.eigen = 10,
-  cv_eps = 0.05,
-  cv_gradtol = 0.05,
-  cv_steptol = 1e-04,
   super = FALSE,
-  sandwich = FALSE,
   refine.inits = FALSE
 )
 }
@@ -132,21 +128,9 @@ eigenvalue during dedicated Eigen-based matrix perturbation loops. Defaults to \
 eigenvalue stabilization penalty threshold upon iterative Cholesky failure.
 Defaults to \code{10}.}
 
-\item{cv_eps}{A numeric convergence tolerance value for cross-validation evaluation loops.
-Defaults to \code{5e-2}.}
-
-\item{cv_gradtol}{A numeric gradient tolerance threshold used to evaluate cross-validation stability.
-Defaults to \code{0.05}.}
-
-\item{cv_steptol}{A numeric step-length boundary tolerance used during cross-validation loops.
-Defaults to \code{1e-4}.}
-
 \item{super}{Logical; activates CHOLMOD supernodal sparse matrix factorization settings.
 Automatically forced to \code{TRUE} if \code{inner_optim} or \code{perturb.method}
 equal \code{"Cholesky"}. Defaults to \code{FALSE}.}
-
-\item{sandwich}{Logical; if \code{TRUE}, evaluates Huber-White sandwich covariance estimators
-to protect standard error calculations against structural model misspecification. Defaults to \code{FALSE}.}
 
 \item{refine.inits}{Logical; if \code{TRUE}, initial values for parameters are refined
 using a diagonal quasi-Newton method. Defaults to \code{FALSE}.}

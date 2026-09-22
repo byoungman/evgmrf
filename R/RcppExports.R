@@ -117,6 +117,29 @@
     .Call(`_evgmrf_tgpd2`, pars, yv)
 }
 
+#' Build a sparse adjacency matrix from grid indices
+#'
+#' Constructs a sparse binary adjacency matrix \code{W} where
+#' \code{W[i, j] == 1} if points \code{i} and \code{j} are
+#' rook-adjacent (differ by exactly 1 in one coordinate and 0 in the
+#' other), and 0 otherwise.
+#'
+#' @param ind A numeric matrix with two columns giving the row/column
+#'   (or x/y) coordinates of each point. Each row is one point.
+#'
+#' @return A sparse matrix (\code{Matrix::dgCMatrix}) of dimension
+#'   \code{nrow(ind)} by \code{nrow(ind)}, symmetric, with 1s marking
+#'   adjacent pairs and 0s elsewhere.
+#'
+#' @examples
+#' ind <- as.matrix(expand.grid(1:5, 1:5))
+#' W <- index2W(ind)
+#'
+#' @export
+index2W <- function(ind) {
+    .Call(`_evgmrf_index2W`, ind)
+}
+
 .tppugmrfld0 <- function(pars, uv, wv) {
     .Call(`_evgmrf_tppugmrfld0`, pars, uv, wv)
 }

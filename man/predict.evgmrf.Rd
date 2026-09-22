@@ -9,18 +9,21 @@
   type = "link",
   se.fit = FALSE,
   prob = NULL,
-  index = object$index,
+  index = NULL,
+  nx = NULL,
+  ny = NULL,
+  set2NA = FALSE,
   simplify2array = FALSE,
-  xid = object$xid,
-  yid = object$yid,
+  xid = NULL,
+  yid = NULL,
   loop = TRUE,
-  progress = loop,
+  progress = FALSE,
   chunksize = 100,
   se.method = "direct",
   nsim = 1000,
   decompose = FALSE,
-  drop.parametric = FALSE,
-  sdif = 1,
+  random2zero = c(FALSE, FALSE),
+  drop.parametric = TRUE,
   openmp = object$control$openmp,
   threads = object$control$threads,
   ...
@@ -42,6 +45,12 @@ quantiles to be estimated. Defaults to \code{NULL}.}
 
 \item{index}{A matrix containing spatial row and column coordinate index maps
 used to reconstruct missing grid layouts. Defaults to \code{object$index}.}
+
+\item{nx, ny}{Positive integers giving the numbers of grid points in the
+first (\code{nx}) and second (\code{ny}) dimensions of the spatial grid.
+Defaults to \code{object$nx} and \code{object$nx}, respectively.}
+
+\item{set2NA}{Set parameters to \code{NA} where there are no data. Defaults to \code{FALSE}.}
 
 \item{simplify2array}{Logical; if \code{TRUE}, coerces and binds the underlying
 prediction surfaces into a single multidimensional array matrix. Defaults to \code{FALSE}.}
@@ -69,11 +78,13 @@ stochastic errors under \code{se.method = "simulation"}. Defaults to \code{1000}
 (BYM) formulations are broken down into individual spatial and random elements.
 Defaults to \code{FALSE}.}
 
+\item{random2zero}{Logical vector; first component corresponds to fitted values
+and second to standard errors. When \code{TRUE}, random additive terms or corresponding
+standard errors inside Besag-York-Mollié (BYM) formulations are set to zero.
+Defaults to \code{c(FALSE, FALSE)}.}
+
 \item{drop.parametric}{Logical; if \code{TRUE} and \code{decompose = TRUE}, deletes
 fixed parametric background terms from the final evaluated list. Defaults to \code{FALSE}.}
-
-\item{sdif}{A numeric standard deviation inflation factor modifier scaled across
-the linear predictor error structures. Defaults to \code{1}.}
 
 \item{openmp}{Logical; switches whether analytical solvers exploit shared memory
 multi-core CPU parallelism extensions. Defaults to \code{object$control$openmp}.}
@@ -104,11 +115,13 @@ Hessian matrix evaluated at the maximum likelihood convergence point. If Besag-Y
 automatically. When calculating quantile-scale standard errors under \code{se.method = "direct"},
 the function calls analytical gradients attached as a functional derivative attribute to
 \code{object$quantile0}.
+
+See \code{evgmrf} for more details on \code{nx}, \code{ny} and \code{index}.
 }
 \examples{
 \dontrun{
-data(COtop5prcp)
-COmxprcp <- COtop5prcp$prcp[, 1, , ]
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp)
 
 # Evaluate location and scale predictions

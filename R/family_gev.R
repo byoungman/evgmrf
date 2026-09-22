@@ -21,22 +21,8 @@
   } else {
     out <- .tgevgmrfld0(pars_mat, likdata$z, likdata$w)
   }
-  # n_test <- 20
-  # id_test <- as.integer(matrix(1:length(pars_mat), length(likdata$z))[1:n_test, , drop = FALSE])
-  # g1 <- numDeriv::grad(function(x) .tgevgmrfld0(matrix(x, 3), likdata$z[1:n_test], likdata$w[1:n_test]), as.vector(pars_mat[, 1:n_test]))
-  # g2 <- t(.tgevgmrfld12(pars_mat[, 1:n_test], likdata$z[1:n_test], likdata$w[1:n_test])[, 1:3])
-  # plot(g1, g2)
-  # browser()
   out
 }  
-# 
-# .d1_gev <- function(pars_mat, likdata) {
-#   .tgevgmrfld1(pars_mat, likdata$z, likdata$w)[, 1]
-# }
-# 
-# .d2_gev <- function(pars_mat, likdata) {
-#   .tgevgmrfld2(pars_mat, likdata$z, likdata$w)
-# }
 
 .d12_gev <- function(pars_mat, likdata) {
   if (likdata$openmp) {
@@ -55,12 +41,7 @@
 .G_gev <- function(pars_mat, likdata) {
   .tgevgmrfldJarr(pars_mat, likdata$z, likdata$w)
 }
-# 
-# .d2_gevmat <- function(pars_mat, likdata) {
-#   .tgevgmrfld2mat(pars_mat, likdata$z, likdata$w)
-# }
 
-# .gev_fns <- list(d0 = .d0_gev, d1 = .d1_gev, d2 = .d2_gev, d12 = .d12_gev)
 .gev_fns <- list(d0 = .d0_gev, d12 = .d12_gev, J = .J_gev, G = .G_gev)
 .gev_fns$trans <- list(function(x) x, function(x) exp(x), function(x) 1.5 / (1 + exp(-x)) - 1)
 

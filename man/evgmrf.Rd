@@ -7,28 +7,27 @@
 evgmrf(
   z,
   family = "gev",
-  formula = ~-1,
+  model = "icar",
+  formula,
   covariates,
   weights = 1,
   inits = "different",
-  model = "icar",
-  W = NULL,
+  W,
   order = 1,
   lambda0,
-  alpha = NA,
   args = list(),
   control = list(),
   trace = 0,
   outer = "bfgs",
   gamma = 1,
-  nx = NULL,
-  ny = NULL,
-  index = NULL,
-  infill = FALSE,
-  cv = FALSE,
+  nx,
+  ny,
+  index,
   auto.weights = FALSE,
   bymfns = NULL,
-  vvv = 1
+  hyper = list(kappa = -1),
+  hyper_start,
+  hyper.jitter = missing(hyper_start)
 )
 }
 \arguments{
@@ -39,10 +38,13 @@ a matrix is expected. If an $r$-largest family is chosen, an array must be provi
 See \code{\link{family.evgmrf}} for details on supported families and required
 data formats. Defaults to \code{"gev"}.}
 
+\item{model}{A character string specifying the GMRF structural framework. See
+\code{\link{model.evgmrf}}. Defaults to \code{"icar"}.}
+
 \item{formula}{A \code{formula} or \code{list} of \code{formula}s for any fixed effects.
 Defaults to \code{ ~ -1}, which means intercept- and fixed-effect-free forms.}
 
-\item{covariates}{A \code{list} of covariate with names matching those in \code{formula}
+\item{covariates}{A \code{list} of covariates with names matching those in \code{formula}
 and dimensions compatible with \code{z}.}
 
 \item{weights}{An array or matrix or scalar of weights for each value in \code{z}.
@@ -52,9 +54,6 @@ Defaults to \code{1}.}
 be chosen: \code{"different"} (Default) uses different values for each points
 based on point-wise optima; \code{"same"} uses the same values.}
 
-\item{model}{A character string specifying the GMRF structural framework. See
-\code{\link{model.evgmrf}}. Defaults to \code{"icar"}.}
-
 \item{W}{An optional square adjacency matrix defining the spatial neighbor relationships.}
 
 \item{order}{A scalar or vector specifying autoregressive order. See
@@ -62,9 +61,6 @@ based on point-wise optima; \code{"same"} uses the same values.}
 
 \item{lambda0}{A scalar or vector of initial smoothing parameter values. Defaults
 to \code{1}. Larger values give smoother starting points.}
-
-\item{alpha}{Fixed variance ratios for 2+-order autoregressive forms. See
-\code{\link{model.evgmrf}}.}
 
 \item{args}{A \code{list} or arguments required to calculations. See
 \code{\link{family.evgmrf}}.}
@@ -84,18 +80,25 @@ One of \code{"newton"}, \code{"nelder-mead"}, or \code{"bfgs"} (Default).}
 \item{index}{A two-column \code{matrix} of integers identifying row and column
 positions; see Details.}
 
-\item{infill}{Logical; if \code{TRUE}, missing values within grid holes are imputed
-during structural inference. Requires \code{index} to be provided.}
-
-\item{cv}{Logical; if \code{TRUE}, cross-validation is used instead of REML
-for smoothing parameter estimation. See \code{\link{evgmrf.control}} for
-details of its parameters. EXPERIMENTAL. Defaults to \code{FALSE}.}
-
 \item{auto.weights}{Logical; if \code{TRUE}, weights are automatically calculated
 using an effective sample size estimate. EXPERIMENTAL. Defaults to \code{FALSE}.}
 
 \item{bymfns}{A \code{list} of functions if model is \code{"bym3"} or
 \code{"bym4"}. See \code{\link{model.evgmrf}}.}
+
+\item{hyper, hyper_start}{Fixed values and starting values, respectively, for
+the hyperparameters of the GMRF. Each is either a named \code{list} or a
+\code{list} of such lists, one for each parameter of the extreme value
+distribution (in the order given in \code{\link{family.evgmrf}}), with
+\code{NULL} for any parameter with nothing to supply. A hyperparameter
+that is omitted from \code{hyper}, or set to \code{-1} (the default for
+\code{kappa}), is estimated; any other value fixes it. \code{hyper_start}
+sets the starting values of those that are estimated, on their natural
+scales. See Details.}
+
+\item{hyper.jitter}{Logical; if \code{TRUE}, start hyperparameter values
+are jittered slightly to identify improvement. Defaults to \code{TRUE} unless
+\code{hyper_start} is used.}
 }
 \value{
 An object of class \code{evgmrf} containing localized parameter arrays
@@ -106,17 +109,73 @@ Fits extreme value distributions where one or more parameters vary across space 
 structures using a Gaussian Markov random field (GMRF) framework.
 }
 \details{
-In general the last two dimensions of \code{z} will define the grid size in terms
-if rows and columns; otherwise it is \code{compacted}. If \code{z} is compacted
-\code{index} or \code{nx} and \code{ny} can be used to supply grid details, and
-\code{z} will be a \code{matrix} or a 3-dimensional \code{array} if
-\code{family == "rlarge"}.
+In general the last two dimensions of \code{z} will define the grid size in
+terms of rows and columns; otherwise it is \code{compacted}. If \code{z} is
+compacted \code{index} or \code{nx} and \code{ny} can be used to supply
+grid details, and \code{z} will be a \code{matrix} or a 3-dimensional
+\code{array} if \code{family == "rlarge"}.
+
+For a compacted \code{z}, each location (a list element, or a column or
+slice of \code{z}) is placed on an \code{nx} by \code{ny} grid as follows.
+\itemize{
+\item If \code{index} is supplied, its \eqn{k}th row gives the row and
+column position of the \eqn{k}th location. Grid cells not listed in
+\code{index} are treated as missing ("holes"). Here \code{nx} and
+\code{ny} default to \code{max(index[, 1])} and \code{max(index[, 2])};
+an error is raised if a supplied value is smaller than these.
+\item If \code{index} is not supplied, the grid is assumed to be full and
+locations are ordered with the first dimension varying fastest, i.e.
+as in \code{expand.grid(seq_len(nx), seq_len(ny))}. Then
+\code{nx * ny} must equal the number of locations. If only one of
+\code{nx} and \code{ny} is given, the other is set to the number of
+locations divided by it, and an error is raised if this is not a whole
+number.
+\item If \code{W} is supplied and neither \code{nx} nor \code{ny} is,
+the locations are treated as a single line, with \code{nx} equal to the
+number of locations and \code{ny = 1}.
+}
+
+Hyperparameters can be fixed, or given starting values, for some or all of
+the parameters of the extreme value distribution using \code{hyper} and
+\code{hyper_start}. The names available depend on \code{model} (see
+\code{\link{model.evgmrf}}):
+\itemize{
+\item \code{kappa}: positive precision multiplier, used by all models and
+estimated on the log scale.
+\item \code{rho}: value in \eqn{(0, 1)} used by \code{"car"} and
+\code{"bym2"}, estimated on the probit scale.
+\item \code{epsilon}: positive precision of the unstructured component of
+\code{"bym"}, estimated on the log scale.
+\item \code{nu}: vector of values in \eqn{(0, 1)} weighting the
+second- and third-order components when \code{order} includes 2 and/or
+3 (\code{"icar"} only), with one element per order above 1 and
+estimated on the probit scale.
+}
+For \code{"bym3"} the hyperparameters are the arguments of the relevant
+function in \code{bymfns}, excluding the first. Each must be given a fixed
+value in \code{hyper} or a starting value in \code{hyper_start}.
+
+A list of length one for \code{hyper}, such as the default
+\code{list(kappa = -1)}, is used for every parameter; otherwise
+\code{hyper} must be a list of lists. A single named list of any length for
+\code{hyper_start} is used for every parameter. If the first parameter has
+no starting values to supply, use \code{list()} rather than \code{NULL} for
+it in \code{hyper_start}, otherwise the whole argument is treated as a
+single list. If \code{hyper_start} is missing, starting values are chosen
+automatically.
 }
 \examples{
 
-data(COtop5prcp)
-COmxprcp <- COtop5prcp$prcp[, 1, , ]
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = "gev")
+
+# Fix the precision parameter kappa at 5 for every parameter
+m_fixed <- evgmrf(COmxprcp, family = "gev", hyper = list(kappa = 5))
+
+# Estimate kappa and rho for a BYM2 model, starting rho at 0.5
+m_bym2 <- evgmrf(COmxprcp, family = "gev", model = "bym2",
+                 hyper_start = list(rho = 0.5))
 
 }
 \references{
@@ -124,5 +183,5 @@ Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 }
 \seealso{
-\code{\link{predict.evgmrf}}, \code{\link{COtop5prcp}}
+\code{\link{predict.evgmrf}}, \code{\link{COorder}}
 }

@@ -69,17 +69,9 @@
 #' @param perturb.mult.eigen A scaling multiplier used to exponentially step up the 
 #'   eigenvalue stabilization penalty threshold upon iterative Cholesky failure. 
 #'   Defaults to \code{10}.
-#' @param cv_eps A numeric convergence tolerance value for cross-validation evaluation loops. 
-#'   Defaults to \code{5e-2}.
-#' @param cv_gradtol A numeric gradient tolerance threshold used to evaluate cross-validation stability. 
-#'   Defaults to \code{0.05}.
-#' @param cv_steptol A numeric step-length boundary tolerance used during cross-validation loops. 
-#'   Defaults to \code{1e-4}.
 #' @param super Logical; activates CHOLMOD supernodal sparse matrix factorization settings. 
 #'   Automatically forced to \code{TRUE} if \code{inner_optim} or \code{perturb.method} 
 #'   equal \code{"Cholesky"}. Defaults to \code{FALSE}.
-#' @param sandwich Logical; if \code{TRUE}, evaluates Huber-White sandwich covariance estimators 
-#'   to protect standard error calculations against structural model misspecification. Defaults to \code{FALSE}.
 #' @param refine.inits Logical; if \code{TRUE}, initial values for parameters are refined 
 #'   using a diagonal quasi-Newton method. Defaults to \code{FALSE}.
 #' 
@@ -111,8 +103,7 @@ evgmrf.control <- function(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-
                            update = FALSE, openmp = FALSE, threads = 0, 
                            perturb.tol = 1e-2, perturb.mult = 5, perturb.method = 'chol', 
                            perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10,
-                           cv_eps = 5e-2, cv_gradtol = .05, cv_steptol = 1e-4, 
-                           super = FALSE, sandwich = FALSE, refine.inits = FALSE) {
+                           super = FALSE, refine.inits = FALSE) {
   
   # 1. Gather all explicit configurations into a named list
   out <- list(
@@ -126,8 +117,7 @@ evgmrf.control <- function(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-
     update = update, openmp = openmp, threads = threads, 
     perturb.tol = perturb.tol, perturb.mult = perturb.mult, perturb.method = perturb.method, 
     perturb.tol.eigen = perturb.tol.eigen, perturb.mult.eigen = perturb.mult.eigen,
-    cv_eps = cv_eps, cv_gradtol = cv_gradtol, cv_steptol = cv_steptol, 
-    super = super, sandwich = sandwich, refine.inits = refine.inits
+    super = super, refine.inits = refine.inits
   )
   
   # 2. Apply conditional overrides based on assigned options

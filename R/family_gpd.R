@@ -16,14 +16,6 @@
   out
 }  
 
-# .d1_gpd <- function(pars_mat, likdata) {
-#   tgpdgmrfld1(pars_mat, likdata$z)[, 1]
-# }
-# 
-# .d2_gpd <- function(pars_mat, likdata) {
-#   tgpdgmrfld2(pars_mat, likdata$z)
-# }
-
 .d12_gpd <- function(pars_mat, likdata) {
   if (likdata$openmp) {
     gH <- .tgpdgmrfld12_omp(pars_mat, likdata$z, likdata$w, likdata$threads)
@@ -37,11 +29,6 @@
   .tgpdgmrfldJ(pars_mat, likdata$z, likdata$w)
 }
 
-# .d2_gpdmat <- function(pars_mat, likdata) {
-#   tgpdgmrfld2mat(pars_mat, likdata$z)
-# }
-
-# .gpd_fns <- list(d0 = .d0_gpd, d1 = .d1_gpd, d2 = .d2_gpd, d12 = .d12_gpd)
 .gpd_fns <- list(d0 = .d0_gpd, d12 = .d12_gpd, J = .J_gpd)
 .gpd_fns$trans <- list(function(x) exp(x), function(x) 1.5 / (1 + exp(-x)) - 1)
 .gpd_fns$names <- list(link = c('logscale', 'transshape'),

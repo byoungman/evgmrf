@@ -11,12 +11,15 @@ S3method(simulate,evgmrf)
 S3method(summary,evgmrf)
 export(evgmrf)
 export(evgmrf.control)
+export(index2W)
 export(tighten)
 import(grDevices)
 import(graphics)
 import(stats)
 import(utils)
 importFrom(Rcpp,sourceCpp)
-importFrom(methods,as)
-importFrom(methods,is)
+importFrom(methods,
+  as,
+  is
+)
 useDynLib(evgmrf, .registration = TRUE)

@@ -24,10 +24,15 @@ for (int j=0; j < n; j++) {
   xi = 1.5 / (1.0 + exp(-txi)) - 1.0;
   
   u = uv(j);
-  w = wv(j);
+  
+  if (std::isfinite(u)) {
+  
+    w = wv(j);
 
-  ee1 = xi * (u - mu) / exp(lpsi);
-  nllh += w * R_pow(1.0 + ee1, -1.0/xi);
+    ee1 = xi * (u - mu) / exp(lpsi);
+    nllh += w * R_pow(1.0 + ee1, -1.0/xi);
+  
+  }
   
 }
 
@@ -57,46 +62,50 @@ arma::mat tppugmrfld12(arma::mat pars, arma::vec uv, arma::vec wv)
     txi = pars(2, j);
     
     u = uv(j);
-    w = wv(j);
     
-    ee2 = exp(-txi);
-    ee3 = 1 + ee2;
-    ee5 = 1.5/ee3 - 1;
-    ee6 = exp(lpsi);
-    ee7 = u - mu;
-    ee9 = ee5 * ee7/ee6;
-    ee10 = 1/ee5;
-    ee11 = ee9 + 1;
-    ee12 = 1 + ee10;
-    ee13 = R_pow(ee11, ee12);
-    ee14 = R_pow(ee3, 2);
-    ee15 = log1p(ee9);
-    ee16 = R_pow(ee11, ee10 + 2);
-    ee17 = ee16 * ee6;
-    ee18 = ee13 * ee6;
-    ee20 = R_pow(ee11, ee10);
-    ee21 = ee12 * ee5;
-    ee24 = ee14 * ee5;
-    ee25 = (1.5 * (ee15/(ee13 * R_pow(ee5, 2))) - 1.5 * (ee12 * ee7/ee17)) * ee2;
-    ee26 = ee7/ee18;
-    ee29 = ee21 * ee7/ee17;
-    ee30 = ee3 * ee5;
-    ee31 = ee14 * ee6;
-    ee32 = (1.5 * (ee15/(ee20 * ee5)) - 1.5 * ee26) * ee2;
-    ee33 = 1/ee13;
-    
-    out(j, 0) += w * (1/ee18);
-    out(j, 1) += w * (ee26);
-    out(j, 2) += w * (ee32/ee24);
-    out(j, 3) += w * (ee21/(ee16 * R_pow(ee6, 2)));
-    out(j, 4) += w * ((ee29 - ee33)/ee6);
-    out(j, 5) += w * (ee25/ee31);
-    out(j, 6) += w * (-((ee33 - ee29) * ee7/ee6));
-    out(j, 7) += w * (ee25 * ee7/ee31);
-    out(j, 8) += w * (((((2.25/ee30 - 3) * ee2/ee3 + 1.5)/ee13 - 1.5 * (ee25/ee14)) * ee7/ee6 +
-      ((2.25 * (ee2 * ee7/(ee11 * ee14 * ee6)) -
-      ((4.5/ee30 - 3) * ee2/ee3 + 1.5) * ee15)/ee20 + 1.5 * (ee32 * ee15/ee24))/ee5) * ee2/ee24);
+    if (std::isfinite(u)) {
       
+      w = wv(j);
+      
+      ee2 = exp(-txi);
+      ee3 = 1 + ee2;
+      ee5 = 1.5/ee3 - 1;
+      ee6 = exp(lpsi);
+      ee7 = u - mu;
+      ee9 = ee5 * ee7/ee6;
+      ee10 = 1/ee5;
+      ee11 = ee9 + 1;
+      ee12 = 1 + ee10;
+      ee13 = R_pow(ee11, ee12);
+      ee14 = R_pow(ee3, 2);
+      ee15 = log1p(ee9);
+      ee16 = R_pow(ee11, ee10 + 2);
+      ee17 = ee16 * ee6;
+      ee18 = ee13 * ee6;
+      ee20 = R_pow(ee11, ee10);
+      ee21 = ee12 * ee5;
+      ee24 = ee14 * ee5;
+      ee25 = (1.5 * (ee15/(ee13 * R_pow(ee5, 2))) - 1.5 * (ee12 * ee7/ee17)) * ee2;
+      ee26 = ee7/ee18;
+      ee29 = ee21 * ee7/ee17;
+      ee30 = ee3 * ee5;
+      ee31 = ee14 * ee6;
+      ee32 = (1.5 * (ee15/(ee20 * ee5)) - 1.5 * ee26) * ee2;
+      ee33 = 1/ee13;
+      
+      out(j, 0) += w * (1/ee18);
+      out(j, 1) += w * (ee26);
+      out(j, 2) += w * (ee32/ee24);
+      out(j, 3) += w * (ee21/(ee16 * R_pow(ee6, 2)));
+      out(j, 4) += w * ((ee29 - ee33)/ee6);
+      out(j, 5) += w * (ee25/ee31);
+      out(j, 6) += w * (-((ee33 - ee29) * ee7/ee6));
+      out(j, 7) += w * (ee25 * ee7/ee31);
+      out(j, 8) += w * (((((2.25/ee30 - 3) * ee2/ee3 + 1.5)/ee13 - 1.5 * (ee25/ee14)) * ee7/ee6 +
+        ((2.25 * (ee2 * ee7/(ee11 * ee14 * ee6)) -
+        ((4.5/ee30 - 3) * ee2/ee3 + 1.5) * ee15)/ee20 + 1.5 * (ee32 * ee15/ee24))/ee5) * ee2/ee24);
+      
+    }  
          
   }
   

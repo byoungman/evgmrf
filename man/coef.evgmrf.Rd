@@ -19,8 +19,8 @@ Extract Model Coefficients
 }
 \examples{
 
-data(COtop5prcp)
-COmxprcp <- COtop5prcp$prcp[, 1, , ]
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')
 coef(m_gev)
 

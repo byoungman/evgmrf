@@ -19,8 +19,8 @@ Print a fitted \code{evgmrf} object
 }
 \examples{
 
-data(COtop5prcp)
-COmxprcp <- COtop5prcp$prcp[, 1, , ]
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')
 print(m_gev)
 

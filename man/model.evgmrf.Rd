@@ -2,57 +2,145 @@
 % Please edit documentation in R/model.R
 \name{model.evgmrf}
 \alias{model.evgmrf}
-\title{Supported Models for evgmrf Models}
+\title{Supported GMRF Models for evgmrf Models}
 \description{
 Documentation for the GMRF structures supported by the \code{\link{evgmrf}}
 fitting function.
 }
 \details{
-The following models are available:
+Argument \code{model} of \code{\link{evgmrf}} is a character vector giving
+the GMRF model for each parameter of the extreme value distribution. It is
+repeated if of length one, and the default is \code{"icar"} for every
+parameter. Use \code{NA} for a parameter that is not to have a GMRF, i.e.
+that is constant. In the following, \eqn{\Omega} is the precision matrix of
+a parameter's GMRF and \eqn{Q} is the structure matrix determined by the
+grid and \code{order}, or by the neighborhood matrix \code{W}. The following
+models are available:
 \itemize{
-\item \code{"icar"}: Intrinsic Conditional Autoregressive model.
-\item \code{"car"}: Conditional Autoregressive model.
-\item \code{"bym2"}: Besag-York-Mollie (BYM) 2 model.
-\item \code{"bym3"}: As above but with (not necessarily Gaussian) random
-effect structure with parameters that need estimating. See Details.
-\item \code{"ald"}: As above but with all parameters fixed.
+\item \code{"icar"}: Intrinsic conditional autoregressive model, with
+\eqn{\Omega = \kappa Q} and \eqn{\kappa > 0}. Its hyper-parameter is
+\eqn{\log \kappa}.
+\item \code{"car"}: Proper conditional autoregressive model, with
+\eqn{\Omega = \kappa [\rho Q + (1 - \rho) I]} and
+\eqn{0 \le \rho \le 1}, where \eqn{I} is the identity matrix. The case
+\eqn{\rho \to 1} corresponds to the ICAR model and
+\eqn{\rho \to 0} to independent Gaussian noise. Its hyper-parameters are
+\eqn{(\log \kappa, \Phi^{-1}(\rho))}, where \eqn{\Phi} is the standard
+Gaussian distribution function.
+\item \code{"bym2"}: Besag-York-Mollie 2 model, as reparametrized by
+Riebler et al. (2016). The random effect is the sum of a spatial
+component with precision \eqn{\kappa Q / \rho} and an independent
+Gaussian component with precision \eqn{\kappa I / (1 - \rho)}, where
+\eqn{\rho \in (0, 1)} is the proportion of variation that is spatial.
+Its hyper-parameters are \eqn{(\log \kappa, \Phi^{-1}(\rho))}. Setting
+\code{decompose = TRUE} in \code{plot} and \code{predict} separates
+the spatial and independent parts.
+\item \code{"bym3"}: As \code{"bym2"}, but with an independent component
+that has a (not necessarily Gaussian) distribution that is specified by
+the user, and which may have parameters that need estimating. See
+below.
 }
 
-For \code{'bym3'} and \code{'bym4'}, \code{'bymfns'} must be supplied to
-\code{\link{evgmrf}}. See examples below.
+By default, no fixed intercept is included for \code{"icar"} models
+(\code{formula = ~ -1}), whereas one is included for the other models
+(\code{formula = ~ 1}).
+
+For \code{"bym3"}, \code{bymfns} must be supplied to \code{\link{evgmrf}}.
+It is a \code{list} with one element for each distribution parameter, with
+\code{NULL} for those without a \code{"bym3"} model. Otherwise the element is
+a function that returns the negative log-density of the independent
+component. Its first argument is the value at which the density is
+evaluated, and any further arguments are parameters of the distribution.
+Each such parameter must be given either a starting value, which is then
+estimated, in \code{hyper_start}, or a fixed value in \code{hyper}. For
+example, \code{hyper_start = list(list(par1 = -2), NULL, NULL)}. A function
+with a single argument specifies the distribution completely, so that
+nothing is estimated. See examples below.
 
 Argument \code{order} can be supplied to \code{\link{evgmrf}} to specify the
-order of autoregressive forms. The default of \code{1} assumes a first-order NSEW
-neighborhood structure. Order \code{2} extends this to diagonals, and second-order
-NESW, and so on. Order \code{1:2} fits first and second order. If a \code{list} each
-element gives the order for each distribution parameter. Relative variances
-can be fixed with \code{alpha}. If \code{order = 1:2} and \code{alpha = .5},
-and lambda is smoothing parameter, then first-order term has smoothing parameter
-lambda, second-order has alpha lambda, third-order has alpha^2 lambda, etc.
+order of the autoregressive form of each parameter. Orders above one are
+only available for \code{"icar"} models on a grid; if \code{W} is supplied
+it defines \eqn{Q} and \code{order} is not used. On a grid, the form of
+order \eqn{q}, for \eqn{q = 1, 2, 3}, penalizes \eqn{q}th-order differences
+in each grid direction. The default of 1 is a first-order form. If
+\code{order} is a vector of integers, it is coerced to a \code{list} with
+\code{lapply(order, seq_len)}, after being repeated for each parameter if of
+length one. If a \code{list}, each element gives the order or orders for the
+corresponding distribution parameter. For example, for the GEV distribution
+\code{order = list(1, 1:2, 1:3)} gives a first-order form for the location
+parameter, an additive combination of first- and second-order forms for the
+scale parameter, and an additive combination of first-, second- and
+third-order forms for the shape parameter. In contrast,
+\code{order = list(1, 1, 2)} uses only a second-order form for the shape
+parameter. In an additive combination the weight of the lowest order is one,
+to ensure identifiability with \eqn{\kappa}. Relative variances can be fixed
+with \code{alpha}. If \code{order = 1:2} and \code{alpha = .5}, and lambda is
+the smoothing parameter, then the first-order term has smoothing parameter
+lambda, the second-order term has alpha lambda, the third-order term has
+alpha^2 lambda, and so on.
 }
 \examples{
 
-\dontrun{
-data(COtop5prcp)
-COmxprcp <- COtop5prcp$prcp[, 1, , ]
-m_gev_car <- evgmrf(COmxprcp, family = 'gev', model = c('car', 'icar', 'icar'))
+\donttest{
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
+
+# ICAR models for all three GEV parameters (the default)
+m_gev <- evgmrf(COmxprcp, family = "gev")
+
+# Proper CAR model for the GEV location parameter
+m_gev_car <- evgmrf(COmxprcp, family = "gev", model = c("car", "icar", "icar"))
+plot(m_gev_car, which = 1)
+
 # As above, but with constant shape parameter, i.e. no GMRF
-m_gev_car2 <- evgmrf(COmxprcp, family = 'gev', model = c('car', 'icar', NA))
+m_gev_car2 <- evgmrf(COmxprcp, family = "gev", model = c("car", "icar", NA))
 
-m_gev_bym <- evgmrf(COmxprcp, family = 'gev', model = c('bym2', 'icar', 'icar'))
+# BYM2 model for the GEV location parameter, with its estimate split into
+# spatial and independent parts
+m_gev_bym <- evgmrf(COmxprcp, family = "gev", model = c("bym2", "icar", "icar"))
+plot(m_gev_bym, which = "location", decompose = TRUE)
 
-fn3 <- function(x, par1)  - dnorm(x, 0, exp(par1), log = TRUE)
-attr(fn3, 'inits') <- c(-2)
-m_gev_bym3 <- evgmrf(COmxprcp, family = 'gev', model = c('bym3', 'icar', 'icar'), 
-                     bymfns = list(fn3, NULL, NULL))
-                     
-fn4 <- function(x)  - dnorm(x, log = TRUE)
-m_gev_bym4 <- evgmrf(COmxprcp, family = 'gev', model = c('bym4', 'icar', 'icar'), 
-                     bymfns = list(fn4, NULL, NULL))
+# Custom (here Gaussian) independent component for the location parameter,
+# with a standard deviation to be estimated, starting from exp(-2)
+custom_fn1 <- function(x, par1) - dnorm(x, 0, exp(par1), log = TRUE)
+m_gev_bym3 <- evgmrf(COmxprcp, family = "gev", model = c("bym3", "icar", "icar"),
+                     bymfns = list(custom_fn1, NULL, NULL),
+                     hyper_start = list(list(par1 = -2), NULL, NULL))
+
+# As above, but with a fixed variance, so no parameters are estimated
+custom_fn2 <- function(x) - dnorm(x, log = TRUE)
+m_gev_bym4 <- evgmrf(COmxprcp, family = "gev", model = c("bym3", "icar", "icar"),
+                     bymfns = list(custom_fn2, NULL, NULL))
+
+# Equivalent to the above, fixing par1 = 0 with hyper
+m_gev_bym5 <- evgmrf(COmxprcp, family = "gev", model = c("bym3", "icar", "icar"),
+                     bymfns = list(custom_fn1, NULL, NULL),
+                     hyper = list(list(par1 = 0), NULL, NULL))
+
+# Higher-order forms: first order for location, first and second combined
+# for scale, first, second and third combined for shape
+m_gev_ord1 <- evgmrf(COmxprcp, family = "gev", order = list(1, 1:2, 1:3))
+
+# Only a second-order form for the shape parameter
+m_gev_ord2 <- evgmrf(COmxprcp, family = "gev", order = list(1, 1, 2))
 }
 
+}
+\references{
+Besag, J. (1974). Spatial interaction and the statistical analysis of
+lattice systems. \emph{Journal of the Royal Statistical Society: Series B},
+36(2), 192-236. \doi{10.1111/j.2517-6161.1974.tb00999.x}
+
+Besag, J., York, J. and Mollie, A. (1991). Bayesian image restoration, with
+two applications in spatial statistics. \emph{Annals of the Institute of
+Statistical Mathematics}, 43(1), 1-20. \doi{10.1007/BF00116466}
+
+Riebler, A., Sorbye, S. H., Simpson, D. and Rue, H. (2016). An intuitive
+Bayesian spatial model for disease mapping that accounts for scaling.
+\emph{Statistical Methods in Medical Research}, 25(4), 1145-1165.
+\doi{10.1177/0962280216660421}
 }
 \seealso{
 \code{\link{evgmrf}}
 }
-\keyword{datasets}
+\keyword{models}

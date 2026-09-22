@@ -3,35 +3,71 @@
 \docType{data}
 \name{COcnty}
 \alias{COcnty}
-\alias{COcnty.adjacency}
-\alias{COcnty.polygons}
-\alias{COcnty.prcp}
 \title{Colorado county annual maxima of daily precipitation}
 \format{
-A matrix (\code{COcnty.prcp}), list \code{COcnty.polygons} and a matrix
-\code{COcnty.adjacency}.
+A list with three components:
+\describe{
+\item{prcp}{Numeric matrix with 56 rows and 64 columns. Row \code{i} is
+year \code{1969 + i} (1970 to 2025) and the columns, which are named,
+are the counties. Units are those of the NA-CORDEX \code{prec} variable
+(kg m-2 s-1 in the raw files; multiply by 86400 for mm/day).}
+\item{polygons}{Named list of length 64, one element per county, in the
+same order as the columns of \code{prcp}. Each element is a list with
+components \code{x} (longitude) and \code{y} (latitude) giving the
+coordinates of the county boundary in degrees.}
+\item{adjacency}{Sparse 64 x 64 symmetric matrix (a \pkg{Matrix}
+\code{"CsparseMatrix"}) with rows and columns in the same order as
+\code{polygons} and the columns of \code{prcp}. Element \eqn{(i, j)} is
+1 if counties \eqn{i} and \eqn{j} are adjacent and 0 otherwise, and the
+diagonal is zero. It can be passed as \code{W} to \code{\link{evgmrf}}.}
+}
+}
+\source{
+NA-CORDEX archive, file
+\code{prec.hist.GFDL-ESM2M.WRF.day.NAM-22i.raw.nc}.
+\url{https://na-cordex.org}. County boundaries from
+\code{maps::map("county", "colorado")}.
 }
 \usage{
 data(COcnty)
 }
 \description{
-Three data files. \code{COcnty.prcp} a 56 x 64 matrix of 56 annual maxima of
-daily precipitation for the 64 Colorado counties. \code{COcnty.polygons} a list
-of 64 polygons giving the county boundaries as a list with longitude (\code{x})
-and latitude (\code{y}) coordinates. \code{COcnty.adjacency} a 64 x 64
-adjacency matrix for with rows and columns matching the order of
-\code{COcnty.polygons} and the columns of \code{COcnty.prcp}.
+Annual maxima of daily precipitation for the 64 counties of Colorado over
+56 years, together with the county boundaries and the adjacency structure
+of the counties, for use with \code{\link{evgmrf}}.
+}
+\details{
+The precipitation data are simulated, and taken from the North American
+CORDEX (NA-CORDEX) archive. They come from the historical experiment of the
+WRF regional climate model driven by the GFDL-ESM2M global climate model, on
+the NAM-22i grid (approximately 0.25 degree resolution). The raw (not
+bias-corrected) daily precipitation output was used, assuming a 365-day
+calendar. For each year (1970-2025) the maximum of the daily values was
+found at every grid cell whose centre lies in Colorado. Each such grid cell
+was then assigned to a county using \code{maps::map.where}, and the value
+for a county is the largest annual maximum over the grid cells assigned to
+it. County boundaries are from the \pkg{maps} package. Two counties are
+adjacent if their boundaries share at least one point (queen contiguity, as
+found by \code{spdep::poly2nb}).
 }
 \examples{
-
 library(evgmrf)
 data(COcnty)
 
-COcnty.prcp_mean <- colMeans(COcnty.prcp)
-coords <- do.call(rbind, lapply(COcnty.polygons, function(x) rbind(cbind(x$x, x$y), NA)))
-plot(coords, type = 'n')
-cols <- rev(grey(ppoints(COcnty.prcp_mean)))[rank(COcnty.prcp_mean)]
+# Map of the mean annual maximum by county
+COcnty_prcp_mean <- colMeans(COcnty$prcp)
+coords <- do.call(rbind, lapply(COcnty$polygons,
+                                function(x) rbind(cbind(x$x, x$y), NA)))
+plot(coords, type = "n")
+cols <- rev(grey(ppoints(COcnty_prcp_mean)))[rank(COcnty_prcp_mean)]
 polygon(coords, col = cols)
 
+# GEV model with a GMRF over the counties, defined by the adjacency matrix
+m_poly <- evgmrf(COcnty$prcp, family = "gev", W = COcnty$adjacency)
+plot(m_poly, polygons = COcnty$polygons)
+}
+\references{
+Mearns, L. O., et al. (2017). The NA-CORDEX dataset, version 1.0.
+NCAR Climate Data Gateway. \doi{10.5065/D6SJ1JCH}
 }
 \keyword{datasets}

@@ -2,70 +2,79 @@
 % Please edit documentation in R/plot.R
 \name{plot.evgmrf}
 \alias{plot.evgmrf}
-\title{Plots from a fitted \code{evgmrf} object.}
+\title{Plot Method for Fitted \code{evgmrf} Objects}
 \usage{
 \method{plot}{evgmrf}(
   x,
-  type = "link",
-  prob = NULL,
-  polygons = NULL,
-  lims = NULL,
-  nlev = NULL,
+  which,
+  polygons,
+  lims,
+  nlev = 15L,
   edge.drop,
-  index = x$index,
-  xid = 1:x$nx,
-  yid = 1:x$ny,
-  nrc = NULL,
-  decompose = FALSE,
-  drop.parametric = TRUE,
-  layout = NULL,
+  mfrow,
+  mfcol,
+  plot.args = list(asp = 1),
+  show = TRUE,
   ...
 )
 }
 \arguments{
-\item{x}{a fitted \code{evgmrf} object}
+\item{x}{An object of class \code{evgmrf}, typically representing a fitted
+spatial extreme value model.}
 
-\item{type}{a character string giving the type of prediction sought; see Details. Defaults to \code{"link"}}
+\item{which}{A numeric vector of indices or character vector of names specifying
+which parameter estimates, linear predictors, or quantiles to plot. Defaults to
+plotting all components returned by \code{\link{predict.evgmrf}}.}
 
-\item{prob}{a scalar or vector of probabilities for quantiles to be estimated if \code{type == "quantile"}; defaults to 0.5}
+\item{polygons}{An optional polygon dataset (such as spatial polygons or boundary geometries)
+used to map predicted values spatially. If omitted, predictions are displayed as grid maps
+via \code{\link[lattice]{levelplot}} or 1D lines via \code{\link[lattice]{xyplot}}.}
 
-\item{polygons}{to do}
+\item{lims}{An optional list specifying the plot limits (e.g., color bar ranges) for
+each plot component. Defaults to the range of values in each plotted component.}
 
-\item{lims}{to do}
+\item{nlev}{An integer or vector of integers giving the number of color levels/intervals
+used in image or polygon plots. Defaults to \code{15L}.}
 
-\item{nlev}{to do}
+\item{edge.drop}{An optional integer or logical specification passed internally to
+drop outer edge pixels/nodes from spatial grid outputs prior to plotting.}
 
-\item{edge.drop}{to do}
+\item{mfrow}{A two-element integer vector \code{c(rows, cols)} specifying the grid
+layout dimensions for arranging multiple panel plots by row.}
 
-\item{index}{to do}
+\item{mfcol}{A two-element integer vector \code{c(rows, cols)} specifying the grid
+layout dimensions for arranging multiple panel plots by column.}
 
-\item{xid}{to do}
+\item{plot.args}{A \code{list} of additional arguments passed to the underlying
+plotting functions (e.g., \code{\link[lattice]{levelplot}} or \code{\link[lattice]{xyplot}}).
+Defaults to \code{list(asp = 1)}.}
 
-\item{yid}{to do}
+\item{show}{Logical; if \code{TRUE} plots are shown in graphics device and if \code{FALSE} a
+\code{list} is returned. Defaults to \code{TRUE}.}
 
-\item{nrc}{to do}
-
-\item{decompose}{to do}
-
-\item{drop.parametric}{to do}
-
-\item{layout}{to do}
-
-\item{...}{arguments passed to \code{lattice::levelplot}}
+\item{...}{Arguments passed on to \code{\link{predict.evgmrf}} (e.g., \code{type},
+\code{prob}, or \code{decompose}).}
 }
 \value{
-A plot
+Invisibly returns the arranged grid of plot objects (a \code{grob} layout from \code{gridExtra}).
 }
 \description{
-Produces plots of parameters or quantiles from a \code{evgmrf} fit.
+Produces spatial or line plots of estimated parameters, linear predictors, or
+predicted quantiles from a fitted extreme value Markov random field (\code{evgmrf}) model.
 }
 \details{
-To do.
+This function computes model predictions by calling \code{\link{predict.evgmrf}} with
+any extra arguments supplied via \code{...}, then renders visual displays of the output:
+\itemize{
+\item If \code{polygons} is supplied, values are rendered onto spatial polygon regions.
+\item If \code{polygons} is missing and a prediction component is 2D, a heat map grid is plotted using \code{\link[lattice]{levelplot}}.
+\item If a prediction component is 1D (e.g., single row or column), a line plot is rendered using \code{\link[lattice]{xyplot}}.
+}
+Multiple plot panels are automatically arranged in a grid using \code{\link[gridExtra]{grid.arrange}}.
 }
 \examples{
-
-data(COtop5prcp)
-COmxprcp <- COtop5prcp$prcp[, 1, , ]
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp)
 plot(m_gev)
 plot(m_gev, type = 'response')
@@ -77,5 +86,5 @@ Youngman, B. D. (2022). evgam: An R Package for Generalized Additive Extreme
 Value Models. Journal of Statistical Software. \doi{10.18637/jss.v103.i03}
 }
 \seealso{
-\link{evgmrf} \link{predict.evgmrf}
+\code{\link{evgmrf}}, \code{\link{predict.evgmrf}}, \code{\link[lattice]{levelplot}}
 }
