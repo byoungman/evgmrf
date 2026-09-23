@@ -44,12 +44,12 @@ raw (not bias-corrected) precipitation output was used.
 library(evgmrf)
 data(WAprcp)
 
+\donttest{
 # Fit the model to the full array of top-50 values
 m_wa1 <- evgmrf(WAprcp$prcp, family = "poisgpd",
                 args = list(r = 50, nper = 56))
 plot(m_wa1, set2NA = TRUE)
 
-\donttest{
 # Fit the model using only the grid cells with data, with an explicit
 # neighbourhood matrix W
 some_prcp <- apply(is.finite(WAprcp$prcp), 2:3, any)

@@ -167,7 +167,8 @@ automatically.
 \examples{
 
 data(COorder)
-COmxprcp <- COorder$prcp[, 1, , ]
+# select top order statistic per year, and 20 x 15 subgrid
+COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
 m_gev <- evgmrf(COmxprcp, family = "gev")
 
 \donttest{

@@ -208,8 +208,8 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       } else {
         if (!openmp) {
           X <- Matrix::t(object$likdata$X)
-            se_id <- rep(1:object$likdata$np, each = object$likdata$n)
             Xlc <- object$likdata$Xlc
+            se_id <- rep(seq_along(Xlc), each = object$likdata$n)
             Xlc <- lapply(Xlc, function(x) x[sapply(x, ncol) > 0])
             if (!decompose) {
               Xlc <- lapply(Xlc, function(x) do.call(cbind, x))
@@ -240,7 +240,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
                 dims = c(n_par, n_i), giveCsparse = TRUE)
               rows <- se_id == out_i[i]
               ind <- ind0 + (i - 1L) * n_obs
-                            X0r <- X0i[rows, , drop = FALSE]
+              X0r <- X0i[rows, , drop = FALSE]
               Bi <- dH * Matrix::tcrossprod(Ei, X0r)
               
               if (loop && (n_obs > chunksize)) {
@@ -283,17 +283,16 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
     }
     if (type == 'quantile') {
       if (progress)
-        pb <- txtProgressBar(min = 0, max = object$n / chunksize, style = 3)
+        pb <- txtProgressBar(min = 0, max = length(prob) * object$n, style = 3)
       se <- list()
       ind0 <- (seq_len(object$np) - 1) * object$n
       for (k in 1:length(prob)) {
         sek <- numeric(object$n)
         if (se.method == 'simulation') {
-          if (progress) 
-            pb <- txtProgressBar(min = 0, max = nsim / chunksize, style = 3)
           spl <- split(1:nsim, c(0:(nsim - 1)) %/% chunksize)
           for (j in 1:length(spl)) {
-            z <- matrix(rnorm(length(spl[[j]]) * nv), ncol = length(spl[[j]]))
+            ind <- spl[[j]]
+            z <- matrix(rnorm(length(ind) * nv), ncol = length(ind))
             lst <- list()
             mat <- .solve_pchol(cpH, z)
             mat <- object$beta + dH * mat
@@ -305,30 +304,37 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
             lst$p <- prob[k]
             lst <- as.matrix(do.call(object$quantile, lst))
             sek <- sek + rowSums((lst - as.vector(out[[k]]))^2)
-            if (progress) setTxtProgressBar(pb, j)
+            if (progress) 
+              setTxtProgressBar(pb, k * object$n + max(ind))
           }
           sek <- sqrt(sek / nsim)
         } else {
-          out0$p <- prob[k]
-          J <- do.call(attr(object$quantile0, 'deriv'), out0)
-          J <- dH * matrix(J, ncol = object$np)
-          if (loop) {
-            spl <- split(1:object$n, c(0:(object$n - 1)) %/% chunksize)
-            for (j in 1:length(spl)) {
-              ind <- spl[[j]]
-              Jj <- as.vector(t(J[ind, ]))
-              indr <- as.integer(outer(ind0, ind, FUN = '+'))
-              indc <- rep(seq_along(ind), each = object$np)
-              Ej <- Matrix::sparseMatrix(i = indr, j = indc, x = Jj, dims = c(nv, length(ind)))
-              temp <- Matrix::solve(cpH, Ej)[indr, , drop = FALSE]
-              sek[ind] <- sqrt(Matrix::colSums(Ej[indr, , drop = FALSE ] * temp))
-              if (progress) setTxtProgressBar(pb, j)
-            }
+          np0 <- object$likdata$np0
+          outv <- lapply(out0, c)
+          outv$p <- prob[k]
+          J <- do.call(attr(object$quantile0, 'deriv'), outv)
+          Xl <- object$likdata$Xl
+          X <- Matrix::bdiag(Xl)
+          dHX <- dH * Matrix::t(X)
+          B <- Matrix::sparseMatrix(i = seq_len(np0 * object$n),
+                                    j = rep(seq_len(object$n), np0),
+                                    x = as.vector(J),
+                                    dims = c(np0 * object$n, object$n))
+          W   <- dHX %*% B                                  # p x n, column i = w_i
+          if (!loop) {
+            sek <- sqrt(Matrix::colSums(W * Matrix::solve(cpH, W)))
+            if (progress)
+              setTxtProgressBar(pb, k * object$n)
           } else {
-            indr <- as.integer(outer(ind0, 1:object$n, FUN = '+'))
-            indc <- rep(1:object$n, each = object$np)
-            EJ <- Matrix::sparseMatrix(i = indr, j = indc, x = as.vector(t(J)), dims = c(nv, object$n))
-            sek <- sqrt(Matrix::colSums(EJ * Matrix::solve(cpH, EJ)))
+            spl <- split(1:object$n, c(0:(object$n - 1)) %/% chunksize)
+            sek <- numeric(object$n)
+            for (j in seq_along(spl)) {
+              ind <- spl[[j]]
+              Wi <- W[ , ind, drop = FALSE]
+              sek[ind] <- sqrt(Matrix::colSums(Wi * Matrix::solve(cpH, Wi)))
+              if (progress) 
+                setTxtProgressBar(pb, k * object$n + max(ind))
+            }
           }
         }
         se[[k]] <- matrix(sek, object$nx, object$ny)[xid, yid, drop = FALSE]

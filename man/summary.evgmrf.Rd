@@ -31,7 +31,7 @@ GMRFs, where relevant.
 \examples{
 
 data(COorder)
-COmxprcp <- COorder$prcp[, 1, , ]
+COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
 m_gev <- evgmrf(COmxprcp, family = 'gev')
 summary(m_gev)
 

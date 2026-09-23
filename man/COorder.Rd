@@ -53,7 +53,6 @@ data set onto the centres of the grid cells, so it is a point value at each
 cell centre rather than a cell average.
 }
 \examples{
-\donttest{
 library(evgmrf)
 data(COorder)
 
@@ -61,6 +60,7 @@ data(COorder)
 COorder$z <- colMeans(COorder$prcp[, 1, , ])
 image(COorder)
 
+\donttest{
 # Elevation on the same grid, and its relationship with the mean annual
 # maximum
 image(COorder$x, COorder$y, COorder$elevation)

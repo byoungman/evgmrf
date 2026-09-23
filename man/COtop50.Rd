@@ -52,10 +52,12 @@ data(COtop50)
 COtop50$z <- colMeans(COtop50$prcp)
 image(COtop50)
 
+\donttest{
 # Fit the model to the full array of top-50 values
 m_co <- evgmrf(COtop50$prcp, family = "poisgpd",
                args = list(r = 50, nper = 56))
 plot(m_co)
+}
 }
 \references{
 Mearns, L. O., et al. (2017). The NA-CORDEX dataset, version 1.0.

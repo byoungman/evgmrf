@@ -124,7 +124,8 @@
 #' @examples
 #' 
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, , ]
+#' # select top order statistic per year, and 20 x 15 subgrid
+#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
 #' m_gev <- evgmrf(COmxprcp, family = "gev")
 #' 
 #' \donttest{
@@ -461,10 +462,14 @@ evgmrf <- function(z,
   }
   Qd0 <- .makeQ_data(nx, ny, model, order, nX1, W, bymfns, hyper)
   .ld$Xl <- X1
-  for (i in which(gmrf)) {
-    .ld$Xl[[i]] <- list(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
-    if (model[i] %in% paste('bym', 2:3, sep = ''))
-      .ld$Xl[[i]] <- c(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
+  for (i in seq_along(.ld$Xl)) {
+    if (i %in% which(gmrf)) {
+      .ld$Xl[[i]] <- list(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
+      if (model[i] %in% paste('bym', 2:3, sep = ''))
+        .ld$Xl[[i]] <- c(.ld$Xl[[i]], Matrix::Diagonal(.ld$n))
+    } else {
+      .ld$Xl[[i]] <- list(.ld$Xl[[i]])
+    }
   }
   .ld$Xlc <- .ld$Xl # componentwise
   for (i in seq_along(.ld$Xl)) {

@@ -20,7 +20,7 @@ Print a fitted \code{evgmrf} object
 \examples{
 
 data(COorder)
-COmxprcp <- COorder$prcp[, 1, , ]
+COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
 m_gev <- evgmrf(COmxprcp, family = 'gev')
 print(m_gev)
 

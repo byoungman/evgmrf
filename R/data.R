@@ -51,7 +51,6 @@
 #' @usage data(COorder)
 #'
 #' @examples
-#' \donttest{
 #' library(evgmrf)
 #' data(COorder)
 #'
@@ -59,6 +58,7 @@
 #' COorder$z <- colMeans(COorder$prcp[, 1, , ])
 #' image(COorder)
 #'
+#' \donttest{
 #' # Elevation on the same grid, and its relationship with the mean annual
 #' # maximum
 #' image(COorder$x, COorder$y, COorder$elevation)
@@ -145,10 +145,12 @@ NULL
 #' COtop50$z <- colMeans(COtop50$prcp)
 #' image(COtop50)
 #'
+#' \donttest{
 #' # Fit the model to the full array of top-50 values
 #' m_co <- evgmrf(COtop50$prcp, family = "poisgpd",
 #'                args = list(r = 50, nper = 56))
 #' plot(m_co)
+#' }
 NULL
 
 #' Colorado county annual maxima of daily precipitation
@@ -213,9 +215,11 @@ NULL
 #' cols <- rev(grey(ppoints(COcnty_prcp_mean)))[rank(COcnty_prcp_mean)]
 #' polygon(coords, col = cols)
 #'
+#' \donttest{
 #' # GEV model with a GMRF over the counties, defined by the adjacency matrix
 #' m_poly <- evgmrf(COcnty$prcp, family = "gev", W = COcnty$adjacency)
 #' plot(m_poly, polygons = COcnty$polygons)
+#' }
 NULL
 
 #' Top 50 daily precipitation values over Washington State
@@ -262,12 +266,12 @@ NULL
 #' library(evgmrf)
 #' data(WAprcp)
 #'
+#' \donttest{
 #' # Fit the model to the full array of top-50 values
 #' m_wa1 <- evgmrf(WAprcp$prcp, family = "poisgpd",
 #'                 args = list(r = 50, nper = 56))
 #' plot(m_wa1, set2NA = TRUE)
 #'
-#' \donttest{
 #' # Fit the model using only the grid cells with data, with an explicit
 #' # neighbourhood matrix W
 #' some_prcp <- apply(is.finite(WAprcp$prcp), 2:3, any)

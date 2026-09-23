@@ -33,3 +33,5 @@
 .pp_fns$names <- list(link = c('location', 'logscale', 'transshape'),
                     response = c('location', 'scale', 'shape'))
 
+.pp_fns$quantile <- function(p, location, scale, shape) .qgev(p, location, scale, shape)
+.pp_fns$quantile0 <- .qgev0
