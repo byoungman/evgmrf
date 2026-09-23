@@ -159,19 +159,9 @@ evgmrf <- function(z,
 ) {
   model <- tolower(model)
   args <- replace(.args0, names(args), args)
-  # if (family == 'poisproc') {
-  #   z <- array(z, c(1, dim(z)))
-  # }
   holes <- TRUE
   control <- replace(evgmrf.control(), names(control), control)
   .checks(model, order)
-  # some basics
-  # if (is.list(z)) {
-  #   if (!is.null(W)) {
-  #     if (nrow(W) == length(z))
-  #       infill <- FALSE
-  #   }
-  # }
   rlargeish <- substr(family, 1, 6) == 'rlarge'
   if (!is.list(z)) {
     w <- 0 * z + weights
@@ -210,89 +200,6 @@ evgmrf <- function(z,
         wl <- lapply(1:dim(za)[3], function(i) as.matrix(wa[ , , i]))
       }
     }
-    #   
-    # 
-    # #       
-    # #       nx <- max(index[, 1])
-    # #       
-    # # 
-    # # 
-    # # not_na <- apply(is.finite(z), tail(seq_along(dim(z)), 2), any)
-    # # no_data <- as.vector(apply(!is.finite(z), tail(seq_along(dim(z)), 2), all))
-    # # holes <- ifelse(all(not_na), FALSE, TRUE)
-    # # if (holes) {
-    # #   if (length(dim(z)) != 3 + as.integer(rlargeish)) {
-    # #     if (!infill) {
-    # #       if (trace >= 0) {
-    # #         message('Argument infill changed to TRUE.')
-    # #         infill <- TRUE
-    # #       }
-    # #     }
-    # #   }
-    # # }
-    #   if (missing(index)) {
-    #     index <- as.matrix(expand.grid(lapply(tail(dz, 2), seq_len)))
-    #   }
-    #   nx <- max(index[, 1])
-    #   ny <- max(index[, 2])
-    #   here <- matrix(FALSE, nx, ny)
-    #   here[index] <- TRUE
-    #   # if (length(dim(z)) != 3 + as.integer(rlargeish)) {
-    #   #   zz <- ww <- matrix(NA, nrow = nrow(z), ncol = length(here))
-    #   #   zz[, as.logical(here)] <- z
-    #   #   if (any(!here))
-    #   #     holes <- TRUE
-    #   #   ww[, as.logical(here)] <- w
-    #   #   dz <- c(dim(zz)[-length(dim(zz))], nx, ny)
-    #   #   z <- array(zz, dz)
-    #   #   w <- array(ww, dz)
-    #   #   not_na <- apply(is.finite(z), tail(seq_along(dz), 2), any)
-    #   #   no_data <- !not_na
-    #   #   index <- as.matrix(expand.grid(1:nx, 1:ny))
-    #   # }
-    #   # here <- here & not_na
-    #   # attr(index, 'paddable') <- TRUE
-    # # }  
-    # # check whether in grid form
-    # if (length(dz) == 2) {
-    #   # matrix-form
-    #   if (rlargeish)
-    #     stop("z can't be a matrix for r-largest family")
-    #   nx <- nx
-    #   ny <- ny
-    #   zm <- matrix(z, m)
-    #   wm <- matrix(w, m)
-    #   zl <- lapply(1:ncol(zm), function(i) zm[, i])
-    #   wl <- lapply(1:ncol(zm), function(i) wm[, i])
-    #   holes <- TRUE
-    # } else {
-    #   if (rlargeish) {
-    #     if (length(dz) == 4) {
-    #       r <- dz[2]
-    #       nx <- dz[3]
-    #       ny <- dz[4]
-    #       za <- array(z, c(dz[1:2], nx * ny))
-    #       wa <- array(w, c(dz[1:2], nx * ny))
-    #       zl <- lapply(1:dim(za)[3], function(i) as.matrix(za[ , , i]))
-    #       wl <- lapply(1:dim(za)[3], function(i) as.matrix(wa[ , , i]))
-    #     } else {
-    #       zl <- lapply(1:dim(z)[3], function(i) as.matrix(z[ , , i]))
-    #       wl <- lapply(1:dim(z)[3], function(i) as.matrix(w[ , , i]))
-    #       holes <- TRUE
-    #     }
-    #   } else {
-    #     nx <- dz[2]
-    #     ny <- dz[3]
-    #     zm <- matrix(z, m)
-    #     wm <- matrix(w, m)
-    #     zl <- lapply(1:ncol(zm), function(i) zm[, i])
-    #     wl <- lapply(1:ncol(zm), function(i) wm[, i])
-    #   }
-    # }
-    # # if (family == 'poisgpd') {
-    # #   wl <- lapply(seq_along(zl), function(i) wl[[i]][order(zl[[i]], decreasing = TRUE, na.last = NA)])
-    # #   zl <- lapply(seq_along(zl), function(i) zl[[i]][order(zl[[i]], decreasing = TRUE, na.last = NA)])
-    # # }
   }
   if (holes) {
     zl <- z
@@ -424,21 +331,6 @@ evgmrf <- function(z,
     inits_list$same <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x))), args$delta)
     if (inits == 'different')
       inits_list$diff <- sapply(which(here), function(i) .quick_tgev_shrink(zl[[i]], delta = args$delta, pars0 = inits_list$same, mult = args$mult))
-    # } else {
-    #   .lf <- .rlargec_fns
-    #   .ld$drop <- args$drop
-    #   if (inits == 'same') {
-    #     p0m1 <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x[, 1]))), delta = args$delta)
-    #     p0m <- t(matrix(p0m1, 3, n))
-    #   } else {
-    #     p0m <- t(sapply(zl, function(x) .quick_tgev(x, delta = args$delta)))
-    #     set_to_mean <- is.na(p0m[, 1])
-    #     if (any(set_to_mean)) {
-    #       infill <- matrix(.quick_tgev(unlist(zl)), sum(set_to_mean), 3, byrow = TRUE)
-    #       p0m[set_to_mean, ] <- infill
-    #     }
-    #   }
-    # }
     .ld$np <- 3
   }
   if (family == 'ald') {
@@ -546,11 +438,7 @@ evgmrf <- function(z,
     if (gmrf[i])
       p0l[[i]][[2]] <- inits[, i]
   }
-  # if (!is.null(bymfns))
-  #   model[!sapply(bymfns, is.null) & is.na(model)] <- 'bym4'
-  # id_bym2 <- lapply(p0l, function(x) rep(FALSE, length(x)))
   for (i in which(gmrf)) {
-    # p0l[[i]] <- c(p0l[[i]], p0m[, i])
     id_bym2[[i]] <- rep(c(FALSE, FALSE), sapply(p0l[[i]], length))
     par_type[[i]] <- c(par_type[[i]], 'spatial')
     if (model[i] %in% paste('bym', 2:3, sep = '')) {
@@ -581,18 +469,12 @@ evgmrf <- function(z,
     if (is.list(.ld$Xl[[i]])) 
       .ld$Xl[[i]] <- do.call(cbind, .ld$Xl[[i]])
   }
-  # .ld$Xl <- lapply(seq_along(.ld$Xl), function(i) do.call(cbind, .ld$Xl[[i]]))
-  # Qd0$R <- list()
-  # for (i in which(gmrf))
-  #   Qd0$R[[i]] <- Matrix::qrR(Matrix::qr(rbind(.ld$Xl[[i]], .ld$Xl[[i]])))
   .ld$X <- Matrix::.bdiag(.ld$Xl)
   .ld$X0 <- Matrix::Diagonal(.ld$n)
   .ld$id_bym2 <- id_bym2
   .ld$openmp <- control$openmp
   .ld$threads <- control$threads
   .ld$control <- c(.evgam.control(), control)
-  # lambda0_temp <- as.vector(unlist(lapply(model, .inits_model)))
-  # par_var <- -log(20 * apply(p0m, 2, var))
   par_var <- apply(inits, 2, sd)
   if(is.null(bymfns)) 
     bymfns <- lapply(seq_along(model), function(.) NULL)
@@ -724,7 +606,6 @@ evgmrf <- function(z,
   } else {
     nx <- max(index[, 1])
     ny <- max(index[, 2])
-    # holes <- nrow(index) < nx * ny
   }
   if (control$inner_optim != 'Cholesky') {
     out$cholprecondHessian <- suppressWarnings(try(Matrix::Cholesky(out$precondHessian, super = control$super, LDL = FALSE), silent = TRUE))
