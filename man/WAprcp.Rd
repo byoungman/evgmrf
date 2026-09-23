@@ -49,6 +49,7 @@ m_wa1 <- evgmrf(WAprcp$prcp, family = "poisgpd",
                 args = list(r = 50, nper = 56))
 plot(m_wa1, set2NA = TRUE)
 
+\donttest{
 # Fit the model using only the grid cells with data, with an explicit
 # neighbourhood matrix W
 some_prcp <- apply(is.finite(WAprcp$prcp), 2:3, any)
@@ -59,6 +60,8 @@ WAprcp_list <- apply(some_prcp_index, 1,
                      simplify = FALSE)
 m_wa2 <- evgmrf(WAprcp_list, family = "poisgpd", W = W,
                 args = list(r = 50, nper = 56))
+}
+
 }
 \references{
 Mearns, L. O., et al. (2017). The NA-CORDEX dataset, version 1.0.

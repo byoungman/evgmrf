@@ -127,12 +127,14 @@
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = "gev")
 #' 
+#' \donttest{
 #' # Fix the precision parameter kappa at 5 for every parameter
 #' m_fixed <- evgmrf(COmxprcp, family = "gev", hyper = list(kappa = 5))
 #'
 #' # Estimate kappa and rho for a BYM2 model, starting rho at 0.5
 #' m_bym2 <- evgmrf(COmxprcp, family = "gev", model = "bym2",
 #'                  hyper_start = list(rho = 0.5))
+#' }                
 #' 
 #' @export
 evgmrf <- function(z, 

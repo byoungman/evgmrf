@@ -53,6 +53,7 @@ data set onto the centres of the grid cells, so it is a point value at each
 cell centre rather than a cell average.
 }
 \examples{
+\donttest{
 library(evgmrf)
 data(COorder)
 
@@ -69,6 +70,7 @@ plot(as.vector(COorder$elevation), as.vector(COorder$z),
 # r-largest model using the top five values in each year
 m_r5 <- evgmrf(COorder$prcp, family = "rlarge")
 plot(m_r5)
+}
 }
 \references{
 Mearns, L. O., et al. (2017). The NA-CORDEX dataset, version 1.0.

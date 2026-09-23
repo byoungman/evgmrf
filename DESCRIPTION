@@ -8,7 +8,7 @@ Authors@R: c(
     person("Ayu", "Shabrina", , "as2009@exeter.ac.uk", role = c("aut", "ctb"),
            comment = c(ORCID = "0000-0001-6172-5230")))
 Description: Fitting extreme value distributions with parameters that vary 
-    according to Gaussian Markov random fields (GMRFs). For details of distributions see Coles, S.G. (2001) <doi:10.1007/978-1-4471-3675-0>, GMRFs see Rue, H., & Held, L. (2005)) <doi:10.1201/9780203492024>, and the fitting approach see Wood, S.N., Pya, N. & Safken, B. (2016) <doi:10.1080/01621459.2016.1180986>.
+    according to Gaussian Markov random fields (GMRFs). For details of distributions see Coles, S.G. (2001) <doi:10.1007/978-1-4471-3675-0>, GMRFs see Rue, H., & Held, L. (2005)) <doi:10.1201/9780203492024>, and the fitting approach see Wood, S.N., Pya, N. & Säfken, B. (2016) <doi:10.1080/01621459.2016.1180986>.
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
