@@ -125,7 +125,7 @@
 #' 
 #' data(COorder)
 #' # select top order statistic per year, and 20 x 15 subgrid
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[1:20, 1, 1:16, 1:14]
 #' m_gev <- evgmrf(COmxprcp, family = "gev")
 #' 
 #' \donttest{

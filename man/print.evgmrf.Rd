@@ -19,9 +19,11 @@ Print a fitted \code{evgmrf} object
 }
 \examples{
 
+\donttest{
 data(COorder)
-COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')
 print(m_gev)
+}
 
 }

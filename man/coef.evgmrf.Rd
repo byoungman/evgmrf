@@ -19,9 +19,11 @@ Extract Model Coefficients
 }
 \examples{
 
+\donttest{
 data(COorder)
-COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')
 coef(m_gev)
+}
 
 }

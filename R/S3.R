@@ -14,10 +14,12 @@
 #'
 #' @examples
 #'
+#' \donttest{
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
 #' summary(m_gev)
+#' }
 #'
 #' @name summary.evgmrf
 #'
@@ -123,10 +125,12 @@ print.summary.evgmrf <- function(x, ...) {
 #'
 #' @examples
 #'
+#' \donttest{
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
 #' print(m_gev)
+#' }
 #'
 #' @export
 print.evgmrf <- function(x, ...) {
@@ -144,10 +148,12 @@ print.evgmrf <- function(x, ...) {
 #'
 #' @examples
 #' 
+#' \donttest{
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
 #' logLik(m_gev)
+#' }
 #'
 #' @export
 logLik.evgmrf <- function(object, ...) {
@@ -164,10 +170,12 @@ logLik.evgmrf <- function(object, ...) {
 #'
 #' @examples
 #'
+#' \donttest{
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
 #' fitted(m_gev)
+#' }
 #'
 #' @return Fitted values extracted from the object `object'.
 #' 
@@ -183,10 +191,12 @@ fitted.evgmrf <- function(object, ...) {
 #'
 #' @examples
 #'
+#' \donttest{
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
 #' coef(m_gev)
+#' }
 #'
 #' @return Fitted values extracted from the object `object'.
 #' 
