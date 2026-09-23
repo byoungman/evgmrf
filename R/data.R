@@ -2,7 +2,7 @@
 #'
 #' The five largest daily precipitation values in each year, for each cell of
 #' a 28 by 16 longitude/latitude grid covering Colorado, for 56 years
-#' (1970-2025), together with the elevation at each grid cell. The order
+#' (1950-2005), together with the elevation at each grid cell. The order
 #' statistics are suitable for fitting r-largest order statistics models with
 #' \code{\link{evgmrf}}.
 #'
@@ -96,7 +96,7 @@ NULL
 #' Colorado daily precipitation top 50
 #'
 #' The 50 largest daily precipitation values over the 56-year simulation
-#' period (1970-2025), stored in decreasing order, for each cell of a 28 by 16
+#' period (1950-2005), stored in decreasing order, for each cell of a 28 by 16
 #' longitude/latitude grid covering Colorado. They are suitable for fitting
 #' peaks-over-threshold models based on the largest values with
 #' \code{\link{evgmrf}}. The grid is the same as that of \code{\link{COorder}}.
@@ -164,7 +164,7 @@ NULL
 #' WRF regional climate model driven by the GFDL-ESM2M global climate model, on
 #' the NAM-22i grid (approximately 0.25 degree resolution). The raw (not
 #' bias-corrected) daily precipitation output was used, assuming a 365-day
-#' calendar. For each year (1970-2025) the maximum of the daily values was
+#' calendar. For each year (1950-2005) the maximum of the daily values was
 #' found at every grid cell whose centre lies in Colorado. Each such grid cell
 #' was then assigned to a county using \code{maps::map.where}, and the value
 #' for a county is the largest annual maximum over the grid cells assigned to
@@ -175,7 +175,7 @@ NULL
 #' @format A list with three components:
 #' \describe{
 #'   \item{prcp}{Numeric matrix with 56 rows and 64 columns. Row \code{i} is
-#'     year \code{1969 + i} (1970 to 2025) and the columns, which are named,
+#'     year \code{1969 + i} (1950 to 2005) and the columns, which are named,
 #'     are the counties. Units are those of the NA-CORDEX \code{prec} variable
 #'     (kg m-2 s-1 in the raw files; multiply by 86400 for mm/day).}
 #'   \item{polygons}{Named list of length 64, one element per county, in the
@@ -227,7 +227,7 @@ NULL
 #' Simulated daily precipitation extremes over Washington State, taken from
 #' the North American CORDEX (NA-CORDEX) archive. For each grid cell, the 50
 #' largest daily precipitation values over the 56-year simulation period
-#' (1970-2025) are stored in decreasing order. Grid cells that fall outside
+#' (1950-2005) are stored in decreasing order. Grid cells that fall outside
 #' Washington State are set to \code{NA}.
 #'
 #' The data come from the historical experiment of the WRF regional climate

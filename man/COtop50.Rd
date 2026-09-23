@@ -29,7 +29,7 @@ data(COtop50)
 }
 \description{
 The 50 largest daily precipitation values over the 56-year simulation
-period (1970-2025), stored in decreasing order, for each cell of a 28 by 16
+period (1950-2005), stored in decreasing order, for each cell of a 28 by 16
 longitude/latitude grid covering Colorado. They are suitable for fitting
 peaks-over-threshold models based on the largest values with
 \code{\link{evgmrf}}. The grid is the same as that of \code{\link{COorder}}.

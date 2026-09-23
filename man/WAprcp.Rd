@@ -31,7 +31,7 @@ data(WAprcp)
 Simulated daily precipitation extremes over Washington State, taken from
 the North American CORDEX (NA-CORDEX) archive. For each grid cell, the 50
 largest daily precipitation values over the 56-year simulation period
-(1970-2025) are stored in decreasing order. Grid cells that fall outside
+(1950-2005) are stored in decreasing order. Grid cells that fall outside
 Washington State are set to \code{NA}.
 }
 \details{

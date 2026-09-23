@@ -34,7 +34,7 @@ data(COorder)
 \description{
 The five largest daily precipitation values in each year, for each cell of
 a 28 by 16 longitude/latitude grid covering Colorado, for 56 years
-(1970-2025), together with the elevation at each grid cell. The order
+(1950-2005), together with the elevation at each grid cell. The order
 statistics are suitable for fitting r-largest order statistics models with
 \code{\link{evgmrf}}.
 }

@@ -8,7 +8,7 @@
 A list with three components:
 \describe{
 \item{prcp}{Numeric matrix with 56 rows and 64 columns. Row \code{i} is
-year \code{1969 + i} (1970 to 2025) and the columns, which are named,
+year \code{1969 + i} (1950 to 2005) and the columns, which are named,
 are the counties. Units are those of the NA-CORDEX \code{prec} variable
 (kg m-2 s-1 in the raw files; multiply by 86400 for mm/day).}
 \item{polygons}{Named list of length 64, one element per county, in the
@@ -42,7 +42,7 @@ CORDEX (NA-CORDEX) archive. They come from the historical experiment of the
 WRF regional climate model driven by the GFDL-ESM2M global climate model, on
 the NAM-22i grid (approximately 0.25 degree resolution). The raw (not
 bias-corrected) daily precipitation output was used, assuming a 365-day
-calendar. For each year (1970-2025) the maximum of the daily values was
+calendar. For each year (1950-2005) the maximum of the daily values was
 found at every grid cell whose centre lies in Colorado. Each such grid cell
 was then assigned to a county using \code{maps::map.where}, and the value
 for a county is the largest annual maximum over the grid cells assigned to

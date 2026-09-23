@@ -45,7 +45,7 @@
 #'
 #' @examples
 #' data(COorder)
-#' COmxprcp <- COorder$prcp[, 1, 1:20, 1:15]
+#' COmxprcp <- COorder$prcp[1:20, 1, 1:16, 1:14]
 #' m_gev <- evgmrf(COmxprcp)
 #' plot(m_gev)
 #' plot(m_gev, type = 'response')
