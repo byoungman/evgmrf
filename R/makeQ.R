@@ -98,7 +98,7 @@
   mods <- ords <- nus <- rep(NA, length(id))
   mods[id] <- model
   ords[id] <- order
-  target <- list(icar = 1, 
+  target <- list(icar = 1, random = 1,
                  car = c(1, -4), 
                  bym = c(1, -4), 
                  bym2 = c(1, -4),
@@ -255,6 +255,10 @@
     if (model == 'car') {
       logdet <- .ldchol(Q)
       logdet <- logdet + Q_rank * lkappa
+    }
+    if (model == 'random') {
+      logdet <- Qd$n * lkappa
+      Q <- Matrix::Diagonal(n = Qd$n, x = 1)
     }
     Q <- kappa * Q
     if (model == 'bym') {

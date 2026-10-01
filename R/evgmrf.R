@@ -25,7 +25,7 @@
 #'   and dimensions compatible with \code{z}.
 #' @param weights An array or matrix or scalar of weights for each value in `z`. 
 #'   Defaults to `1`.
-#' @param inits A character string specifying how initial parameter values should
+#' @param inits.method A character string specifying how initial parameter values should
 #'   be chosen: \code{"different"} (Default) uses different values for each points
 #'   based on point-wise optima; \code{"same"} uses the same values.
 #' @param lambda0 A scalar or vector of initial smoothing parameter values. Defaults
@@ -144,7 +144,7 @@ evgmrf <- function(z,
                    formula, 
                    covariates, 
                    weights = 1, 
-                   inits = 'different',
+                   inits.method = 'different',
                    W, 
                    order = 1, 
                    lambda0,
@@ -304,7 +304,7 @@ evgmrf <- function(z,
     .lf <- .gpd_fns
     .ld$np <- 2
     inits_list$same <- .quick_tgpd(na.omit(unlist(zl)))
-    if (inits == 'different')
+    if (inits.method == 'different')
       inits_list$diff <- sapply(which(here), function(i) .quick_tgpd(zl[[i]]))
   }
   if (family == 'poisgpd') {
@@ -319,20 +319,20 @@ evgmrf <- function(z,
       .ld$u <- as.vector(args$u)
     }
     inits_list$same <- .quick_tpp(na.omit(unlist(zl)), .ld$m, min(.ld$u, na.rm = TRUE), args$delta)
-    if (inits == 'different')
+    if (inits.method == 'different')
       inits_list$diff <- sapply(which(here), function(i) .quick_tpp(zl[[i]], .ld$u[i], m = .ld$m, delta = args$delta))
   }
   if (family == 'gev') {
     .lf <- .gev_fns
     .ld$np <- 3
     inits_list$same <- .quick_tgev(na.omit(unlist(zl)), args$delta)
-    if (inits == 'different')
+    if (inits.method == 'different')
       inits_list$diff <- sapply(which(here), function(i) .quick_tgev_shrink(zl[[i]], delta = args$delta, pars0 = inits_list$same, mult = args$mult))
   }
   if (family == 'rlarge') {
     .lf <- .rlarge_fns
     inits_list$same <- .quick_tgev(na.omit(unlist(lapply(zl, function(x) x))), args$delta)
-    if (inits == 'different')
+    if (inits.method == 'different')
       inits_list$diff <- sapply(which(here), function(i) .quick_tgev_shrink(zl[[i]], delta = args$delta, pars0 = inits_list$same, mult = args$mult))
     .ld$np <- 3
   }
@@ -342,7 +342,7 @@ evgmrf <- function(z,
     if (is.null(args$tau))
       stop("Must supply args$tau for family = 'ald'.")
     inits_list$same <- .quick_ald(na.omit(unlist(zl)), args = args)
-    if (inits == 'different')
+    if (inits.method == 'different')
       inits_list$diff <- sapply(which(here), function(i) .quick_ald(zl[[i]], args = args))
   }
   if (family == 'pproc') {
@@ -354,10 +354,10 @@ evgmrf <- function(z,
     p0m <- p0m - log(.ld$m)
     p0m <- matrix(p0m, n, 1)
   }
-  if (inits == 'same') {
+  if (inits.method == 'same') {
     inits <- matrix(inits_list$same, .ld$np, n)
   }
-  if (inits == 'different') {
+  if (inits.method == 'different') {
     if (any(!here)) {
       inits <- matrix(inits_list$same, .ld$np, n)
       inits[, here] <- inits_list$diff
@@ -365,6 +365,10 @@ evgmrf <- function(z,
       inits <- inits_list$diff
     }
   }
+  if (family %in% c("gev", "poisgpd")) 
+    inits[3, ] <- pmax(inits[3, ], .73)
+  if (family %in% c("gpd")) 
+    inits[2, ] <- pmax(inits[2, ], .73)
   inits <- t(inits)
   .ld$np0 <- .ld$np
   if (length(hyper) == 1 && .ld$np0 > 1)
@@ -417,12 +421,12 @@ evgmrf <- function(z,
   gmrf <- !is.na(model)
   if (sum(gmrf) == 0)
     stop('Model must have at least one GMRF prior.')
-  if (any(!gmrf)) {
-    for (i in which(!gmrf)) {
-      if (formula[[i]] == ~-1)
-        formula[[i]] <- ~ 1
-    }
-  }
+  # if (any(!gmrf)) {
+  #   for (i in which(!gmrf)) {
+  #     if (formula[[i]] == ~-1)
+  #       formula[[i]] <- ~ 1
+  #   }
+  # }
   X1 <- lapply(formula, model.matrix, data = covariates)
   nX1 <- sapply(X1, ncol)
   fixed_names <- lapply(X1, colnames)
@@ -617,8 +621,8 @@ evgmrf <- function(z,
   if (control$inner_optim != 'Cholesky') {
     out$cholprecondHessian <- suppressWarnings(try(Matrix::Cholesky(out$precondHessian, super = control$super, LDL = FALSE), silent = TRUE))
     if (inherits(out$cholprecondHessian, 'try-error')) {
-      out$precondHessian <- .perturb_super(out$precondHessian)
-      out$cholprecondHessian <- Matrix::Cholesky(out$precondHessian, LDL = FALSE)
+      out$precondHessian <- .perturb_super(out$precondHessian, super = control$super)
+      out$cholprecondHessian <- Matrix::Cholesky(out$precondHessian, LDL = FALSE, super = control$super)
     }
   }
   out$Hessian <- attr(out$objective, 'Hessian')

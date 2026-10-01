@@ -11,7 +11,7 @@ evgmrf(
   formula,
   covariates,
   weights = 1,
-  inits = "different",
+  inits.method = "different",
   W,
   order = 1,
   lambda0,
@@ -50,7 +50,7 @@ and dimensions compatible with \code{z}.}
 \item{weights}{An array or matrix or scalar of weights for each value in \code{z}.
 Defaults to \code{1}.}
 
-\item{inits}{A character string specifying how initial parameter values should
+\item{inits.method}{A character string specifying how initial parameter values should
 be chosen: \code{"different"} (Default) uses different values for each points
 based on point-wise optima; \code{"same"} uses the same values.}
 
