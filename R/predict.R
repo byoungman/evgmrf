@@ -46,6 +46,8 @@
 #'   multi-core CPU parallelism extensions. Defaults to \code{object$control$openmp}.
 #' @param threads An integer controlling maximum system CPU threads allocated 
 #'   if \code{openmp = TRUE}. Defaults to \code{object$control$threads}.
+#' @param supernodal Logical; activates CHOLMOD supernodal sparse matrix factorization settings. 
+#'   Defaults to `FALSE`.
 #' @param ... Unused auxiliary flags passed along for generic matching alignment with 
 #'   \code{\link[stats]{predict}}.
 #' 
@@ -92,7 +94,8 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
                            simplify2array = FALSE, xid = NULL, yid = NULL,
                            loop = TRUE, progress = FALSE, chunksize = 1e2, se.method = 'direct',
                            nsim = 1e3, decompose = FALSE, random2zero = c(FALSE, FALSE), drop.parametric = TRUE, 
-                           openmp = object$control$openmp, threads = object$control$threads,  ...) {
+                           openmp = object$control$openmp, threads = object$control$threads, 
+                           supernodal = FALSE,  ...) {
   if (type != "link" & decompose)
     stop("Decomposed parameters only available for type = 'link'.")
   type0 <- type
@@ -191,87 +194,94 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
       cat('Calculating standard errors...\n')
     nv <- nrow(object$Hessian)
     dH <- Matrix::diag(object$diagHessian)
-    cpH <- object$cholprecondHessian
+    if (!supernodal) {
+      chol_factor <- .chol_analyze_simplicial(object$precondHessian)
+      placeholder <- .chol_factorize_simplicial(chol_factor, object$precondHessian)
+    } else {
+      chol_factor <- .chol_analyze_supernodal(object$precondHessian)
+      placeholder <- .chol_factorize_supernodal(chol_factor, object$precondHessian)
+    }
     if (type %in% c('link', 'response')) {
+      
+      # ---- components: one per parameter, or one per term if decompose = TRUE ----
+      Xlc <- object$likdata$Xlc
+      se_id <- rep(seq_along(Xlc), each = object$likdata$n)
+      Xlc <- lapply(Xlc, function(x) x[sapply(x, ncol) > 0])
+      if (!decompose) {
+        Xlc <- lapply(Xlc, function(x) do.call(cbind, x))
+        out_i <- seq_along(Xlc)
+      } else {
+        out_i <- rep(seq_along(Xlc), sapply(Xlc, length))
+        Xlc <- unlist(Xlc, recursive = FALSE)
+      }
+      reps <- sapply(Xlc, ncol)
+      X_col_id <- rep(seq_along(reps), reps)
+      splitter <- rep(seq_along(reps), each = object$likdata$n)
+      X0 <- object$likdata$X
+      n_par <- ncol(X0)
+      n_obs <- object$likdata$n
+      ind0 <- seq_len(n_obs)
+      n_comp <- length(reps)
+      # columns of X (coefficients) and design rows for each component
+      cols <- lapply(seq_len(n_comp), function(i) which(X_col_id == i))
+      Xr <- lapply(seq_len(n_comp), function(i)
+        X0[se_id == out_i[i], cols[[i]], drop = FALSE])
+      se <- rep(NA_real_, length(splitter))
+      
       if (se.method == 'simulation') {
-        if (progress) 
-          pb <- txtProgressBar(min = 0, max = nsim / chunksize, style = 3)
+        
         spl <- split(1:nsim, c(0:(nsim - 1)) %/% chunksize)
-        se <- numeric(nv)
-        for (j in 1:length(spl)) {
+        if (progress) 
+          pb <- txtProgressBar(min = 0, max = length(spl), style = 3)
+        acc <- numeric(length(splitter))
+        for (j in seq_along(spl)) {
           z <- matrix(sample(c(-1, 1), length(spl[[j]]) * nv, replace = TRUE), nv)
-          mat <- .solve_pchol(cpH, z)
-          se <- se + rowSums(mat * mat)
+          # coefficient deviations with covariance H^{-1} = D A^{-1} D
+          mat <- dH * .chol_solve_Lt(chol_factor, z, supernodal)
+          for (i in seq_len(n_comp)) {
+            # deviations of this component's linear predictor: eta = X_i beta_i
+            eta <- as.matrix(Xr[[i]] %*% mat[cols[[i]], , drop = FALSE])
+            ind <- ind0 + (i - 1L) * n_obs
+            acc[ind] <- acc[ind] + rowSums(eta * eta)
+          }
           if (progress) setTxtProgressBar(pb, j)
         }
-        se <- object$diagHessian * sqrt(se / nsim)
+        se <- sqrt(acc / nsim)
+        
       } else {
-        if (!openmp) {
-          X <- Matrix::t(object$likdata$X)
-            Xlc <- object$likdata$Xlc
-            se_id <- rep(seq_along(Xlc), each = object$likdata$n)
-            Xlc <- lapply(Xlc, function(x) x[sapply(x, ncol) > 0])
-            if (!decompose) {
-              Xlc <- lapply(Xlc, function(x) do.call(cbind, x))
-              out_i <- seq_along(Xlc)
-            } else {
-              out_i <- rep(seq_along(Xlc), sapply(Xlc, length))
-              Xlc <- unlist(Xlc, recursive = FALSE)
+        
+        if (progress)
+          pb <- txtProgressBar(min = 0, max = length(se), style = 3)
+        
+        for (i in seq_len(n_comp)) {
+          
+          n_i <- length(cols[[i]])
+          ind <- ind0 + (i - 1L) * n_obs
+          Ei <- Matrix::sparseMatrix(i = cols[[i]], j = seq_len(n_i), x = 1,
+                                     dims = c(n_par, n_i))
+          Bi <- dH * Matrix::tcrossprod(Ei, Xr[[i]])
+          
+          if (loop && (n_obs > chunksize)) {
+            
+            for (first in seq.int(1L, n_obs, by = chunksize)) {
+              last <- min(first + chunksize - 1L, n_obs)
+              block <- first:last
+              Bb <- as.matrix(Bi[, block, drop = FALSE])
+              se[ind[block]] <- sqrt(.chol_quadform(chol_factor, Bb, supernodal))
+              if (progress)
+                setTxtProgressBar(pb, tail(ind[block], 1))
             }
-            reps <- sapply(Xlc, ncol)
-            X_col_id <- rep(seq_along(reps), reps)
-            splitter <- rep(seq_along(reps), each = object$likdata$n)
-            se <- rep(NA, length(splitter))
+            
+          } else {
+            
+            se[ind] <- sqrt(.chol_quadform(chol_factor, as.matrix(Bi), supernodal))
             if (progress)
-              pb <- txtProgressBar(min = 0, max = length(se), style = 3)
-            X0 <- object$likdata$X
-            n_par <- ncol(X0)
-            n_obs <- object$likdata$n
-            ind0 <- seq_len(n_obs)
-
-            for (i in seq_along(reps)) {
-              
-              cols_i <- which(X_col_id == i)
-              X0i <- X0[, cols_i, drop = FALSE]
-              n_i <- length(cols_i)
-              rows_i <- se_id == out_i[i]
-              ind <- ind0 + (i - 1L) * n_obs
-              Ei <- Matrix::sparseMatrix(i = cols_i, j = seq_len(n_i), x = 1,
-                dims = c(n_par, n_i), giveCsparse = TRUE)
-              rows <- se_id == out_i[i]
-              ind <- ind0 + (i - 1L) * n_obs
-              X0r <- X0i[rows, , drop = FALSE]
-              Bi <- dH * Matrix::tcrossprod(Ei, X0r)
-              
-              if (loop && (n_obs > chunksize)) {
-                
-                for (first in seq.int(1L, n_obs, by = chunksize)) {
-                  
-                  last <- min(first + chunksize - 1L, n_obs)
-                  block <- first:last
-                  cols_block <- cols_i[block]
-                  t1 <- Matrix::solve(cpH, Bi[, block, drop = FALSE])
-                  se[ind[block]] <- sqrt(Matrix::colSums(t1 * Bi[, block, drop = FALSE]))
-                  
-                  if (progress)
-                    setTxtProgressBar(pb, tail(ind[block], 1))
-                  
-                }
-              
-              } else {
-                
-                se[ind] <- sqrt(Matrix::colSums(Bi * Matrix::solve(cpH, Bi)))
-                
-                if (progress)
-                  setTxtProgressBar(pb, tail(ind, 1))
-                
-              }
-              
-            }
-
-        } else {
-          stop("Can't do openmp yet")
+              setTxtProgressBar(pb, tail(ind, 1))
+            
+          }
+          
         }
+        
       }
       se <- split(se, splitter)
       if (type == 'response') {
@@ -294,7 +304,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
             ind <- spl[[j]]
             z <- matrix(rnorm(length(ind) * nv), ncol = length(ind))
             lst <- list()
-            mat <- .solve_pchol(cpH, z)
+            mat <- .chol_solve_Lt(chol_factor, z, supernodal)
             mat <- object$beta + dH * mat
             for (i in 1:object$np) {
               lst[[i]] <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
@@ -305,7 +315,7 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
             lst <- as.matrix(do.call(object$quantile, lst))
             sek <- sek + rowSums((lst - as.vector(out[[k]]))^2)
             if (progress) 
-              setTxtProgressBar(pb, k * object$n + max(ind))
+              setTxtProgressBar(pb, (k - 1) * object$n + max(ind))
           }
           sek <- sqrt(sek / nsim)
         } else {
@@ -320,9 +330,9 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
                                     j = rep(seq_len(object$n), np0),
                                     x = as.vector(J),
                                     dims = c(np0 * object$n, object$n))
-          W   <- dHX %*% B                                  # p x n, column i = w_i
+          W <- dHX %*% B
           if (!loop) {
-            sek <- sqrt(Matrix::colSums(W * Matrix::solve(cpH, W)))
+            sek <- sqrt(.chol_quadform(chol_factor, as.matrix(W), supernodal))
             if (progress)
               setTxtProgressBar(pb, k * object$n)
           } else {
@@ -331,9 +341,9 @@ predict.evgmrf <- function(object, type = 'link', se.fit = FALSE, prob = NULL, i
             for (j in seq_along(spl)) {
               ind <- spl[[j]]
               Wi <- W[ , ind, drop = FALSE]
-              sek[ind] <- sqrt(Matrix::colSums(Wi * Matrix::solve(cpH, Wi)))
+              sek[ind] <- sqrt(.chol_quadform(chol_factor, as.matrix(Wi), supernodal))
               if (progress) 
-                setTxtProgressBar(pb, k * object$n + max(ind))
+                setTxtProgressBar(pb, (k - 1) * object$n + max(ind))
             }
           }
         }

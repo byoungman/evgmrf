@@ -20,7 +20,7 @@ evgmrf.control(
   reml_rho0 = 0.1,
   line_search_mult = 1,
   inner_optim = "chol",
-  alpha.tol = 1e-06,
+  phi.tol = 1e-05,
   grad_mult = 0,
   par_mult = 0.1,
   update = FALSE,
@@ -28,10 +28,6 @@ evgmrf.control(
   threads = 0,
   perturb.tol = 0.01,
   perturb.mult = 5,
-  perturb.method = "chol",
-  perturb.tol.eigen = 0.001,
-  perturb.mult.eigen = 10,
-  super = FALSE,
   refine.inits = FALSE
 )
 }
@@ -76,7 +72,7 @@ optimization process. Defaults to \code{1e-6}.}
 \item{reml_alpha0}{A scalar setting the initial line search multiplier for the REML
 optimization process. Defaults to \code{1}.}
 
-\item{reml_rho0}{A scalar setting the multiplicative rate at thish the line search
+\item{reml_rho0}{A scalar setting the multiplicative rate at which the line search
 multiplier is reduced for the REML optimization process. Defaults to \code{0.5}.}
 
 \item{line_search_mult}{A multiplier for the step when line searches take
@@ -88,8 +84,8 @@ to \code{Eigen::SimplicialLLT}). If explicitly set to \code{"Cholesky"},
 \code{super} is automatically forced to \code{TRUE} and \code{Matrix::Cholesky}
 is used with \code{super = TRUE}. Only recommended with \code{Matrix(>=1.8-0)}.}
 
-\item{alpha.tol}{A numeric convergence tolerance threshold for the model's
-spatial \code{alpha} parameters. Defaults to \code{1e-6}.}
+\item{phi.tol}{A numeric convergence tolerance threshold for the model's
+spatial \code{phi} parameters. Defaults to \code{1e-5}.}
 
 \item{grad_mult}{A numeric penalty coefficient applied during outer REML optimization.
 If any unpenalised inner optimization gradient coordinate exceeds an absolute
@@ -116,21 +112,6 @@ Cholesky factorization loops. Defaults to \code{1e-2}.}
 \item{perturb.mult}{A scaling multiplier used to exponentially step up the diagonal
 \code{perturb.tol} ridge penalty during iterative Cholesky factorization failures.
 Defaults to \code{5}.}
-
-\item{perturb.method}{A character string defining the algebraic framework used to apply
-perturbations; defaults to \code{"chol"}. If set to \code{"Cholesky"}, \code{super}
-is forced to \code{TRUE}.}
-
-\item{perturb.tol.eigen}{A numeric baseline tolerance threshold checking the smallest
-eigenvalue during dedicated Eigen-based matrix perturbation loops. Defaults to \code{1e-3}.}
-
-\item{perturb.mult.eigen}{A scaling multiplier used to exponentially step up the
-eigenvalue stabilization penalty threshold upon iterative Cholesky failure.
-Defaults to \code{10}.}
-
-\item{super}{Logical; activates CHOLMOD supernodal sparse matrix factorization settings.
-Automatically forced to \code{TRUE} if \code{inner_optim} or \code{perturb.method}
-equal \code{"Cholesky"}. Defaults to \code{FALSE}.}
 
 \item{refine.inits}{Logical; if \code{TRUE}, initial values for parameters are refined
 using a diagonal quasi-Newton method. Defaults to \code{FALSE}.}

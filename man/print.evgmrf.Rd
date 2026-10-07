@@ -19,7 +19,7 @@ Print a fitted \code{evgmrf} object
 }
 \examples{
 
-\donttest{
+\dontrun{
 data(COorder)
 COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')

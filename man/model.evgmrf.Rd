@@ -81,7 +81,7 @@ alpha^2 lambda, and so on.
 }
 \examples{
 
-\donttest{
+\dontrun{
 data(COorder)
 COmxprcp <- COorder$prcp[, 1, , ]
 

@@ -206,22 +206,25 @@
     for (j in 1:length(temp)) {
       if (names(temp)[j] %in% c('kappa', 'epsilon'))
         temp[[j]] <- exp(temp[[j]])
-      if (names(temp)[j] %in% c('rho', 'nu'))
-        temp[[j]] <- pnorm(temp[[j]])
+      if (names(temp)[j] %in% c('rho', 'nu')) {
+        orig <- temp[[j]]
+        temp[[j]] <- pnorm(orig)
+        attr(temp[[j]], 'original') <- orig
+      }
     }
     hyper[[i]][names(temp)] <- temp
   }
   hyper
 }
 
-.mQ <- function(hyper, Qd, alpha.tol = 1e-6) {
+.mQ <- function(hyper, Qd, phi.tol = 1e-6) {
   mods <- Qd$mod
   ords <- Qd$ord
   nus <- Qd$nu
   lsQs <- Qd$lsQs
   Ql <- list()
   for (i in 1:Qd$np) {
-    Ql[[i]] <- .makeQ_any(hyper[[i]], Qd, mods[i], ords[[i]], lsQs[i], Qd$n_null[i], Qd$R[[i]], alpha.tol)
+    Ql[[i]] <- .makeQ_any(hyper[[i]], Qd, mods[i], ords[[i]], lsQs[i], Qd$n_null[i], Qd$R[[i]], phi.tol)
   }
   Q <- Matrix::.bdiag(Ql)
   attr(Q, 'logdet') <- sum(sapply(Ql, attr, 'logdet'))
@@ -230,19 +233,19 @@
   Q
 }
 
-.makeQ_any <- function(pars, Qd, model, order, lsQ, n_null, R, rho.tol = 1e-6) {
+.makeQ_any <- function(pars, Qd, model, order, lsQ, n_null, R, phi.tol = 1e-6) {
   logdet <- 0
   nu <- c(1, NA, NA)
   if (!is.na(model)) {
     kappa <- pars$kappa
     lkappa <- log(kappa)
     if (model == 'car') {
-      rho.tol <- rho.tol + (1 - rho.tol) * pars$rho
+      phi.tol <- phi.tol + (1 - phi.tol) * pars$rho
       Q_rank <- Qd$n
     } else {
       Q_rank <- Qd$n - max(order)
     }
-    rho <- 1 - rho.tol
+    rho <- 1 - phi.tol
     if (any(order > 1) && length(order) > 1) {
       nu[order[order > 1]] <- pars$nu
     }
@@ -266,7 +269,7 @@
       logdet <- .ldchol(Q)
     }
     if (model == 'bym2') {
-      rho <- rho.tol + (1 - rho.tol) * pars$rho
+      rho <- phi.tol + (1 - phi.tol) * pars$rho
       lrho <- log(rho)
       l1mrho <- log(1 - rho)
       logdet <- Q_rank * (lkappa - lrho + lsQ) + Qd$n * (lkappa - l1mrho)

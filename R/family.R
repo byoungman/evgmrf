@@ -93,7 +93,7 @@
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #' data(COorder)
 #'
 #' # GEV distribution for annual maxima

@@ -62,7 +62,7 @@ plot(coords, type = "n")
 cols <- rev(grey(ppoints(COcnty_prcp_mean)))[rank(COcnty_prcp_mean)]
 polygon(coords, col = cols)
 
-\donttest{
+\dontrun{
 # GEV model with a GMRF over the counties, defined by the adjacency matrix
 m_poly <- evgmrf(COcnty$prcp, family = "gev", W = COcnty$adjacency)
 plot(m_poly, polygons = COcnty$polygons)

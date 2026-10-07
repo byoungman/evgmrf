@@ -60,7 +60,7 @@ data(COorder)
 COorder$z <- colMeans(COorder$prcp[, 1, , ])
 image(COorder)
 
-\donttest{
+\dontrun{
 # Elevation on the same grid, and its relationship with the mean annual
 # maximum
 image(COorder$x, COorder$y, COorder$elevation)

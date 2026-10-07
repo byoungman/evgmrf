@@ -25,8 +25,60 @@
     .Call(`_evgmrf_ald2`, pars, yv, C, tau)
 }
 
-.eig1 <- function(A) {
-    .Call(`_evgmrf_eig1`, A)
+.chol_analyze_simplicial <- function(A) {
+    .Call(`_evgmrf_chol_analyze_simplicial`, A)
+}
+
+.chol_analyze_supernodal <- function(A) {
+    .Call(`_evgmrf_chol_analyze_supernodal`, A)
+}
+
+.chol_factorize_simplicial <- function(chol, A) {
+    .Call(`_evgmrf_chol_factorize_simplicial`, chol, A)
+}
+
+.chol_solve_dense_simplicial <- function(chol, b) {
+    .Call(`_evgmrf_chol_solve_dense_simplicial`, chol, b)
+}
+
+.chol_solve_sparse_simplicial <- function(chol, B) {
+    .Call(`_evgmrf_chol_solve_sparse_simplicial`, chol, B)
+}
+
+.chol_quadform_simplicial <- function(chol, B) {
+    .Call(`_evgmrf_chol_quadform_simplicial`, chol, B)
+}
+
+.chol_solve_Lt_simplicial <- function(chol, z) {
+    .Call(`_evgmrf_chol_solve_Lt_simplicial`, chol, z)
+}
+
+.chol_L_simplicial <- function(chol) {
+    .Call(`_evgmrf_chol_L_simplicial`, chol)
+}
+
+.chol_factorize_supernodal <- function(chol, A) {
+    .Call(`_evgmrf_chol_factorize_supernodal`, chol, A)
+}
+
+.chol_solve_dense_supernodal <- function(chol, b) {
+    .Call(`_evgmrf_chol_solve_dense_supernodal`, chol, b)
+}
+
+.chol_solve_sparse_supernodal <- function(chol, B) {
+    .Call(`_evgmrf_chol_solve_sparse_supernodal`, chol, B)
+}
+
+.chol_quadform_supernodal <- function(chol, B) {
+    .Call(`_evgmrf_chol_quadform_supernodal`, chol, B)
+}
+
+.chol_solve_Lt_supernodal <- function(chol, z) {
+    .Call(`_evgmrf_chol_solve_Lt_supernodal`, chol, z)
+}
+
+.ldchol <- function(A) {
+    .Call(`_evgmrf_ldchol`, A)
 }
 
 .tgevgmrfld0 <- function(pars, yc, wc) {
@@ -226,25 +278,5 @@ index2W <- function(ind) {
 
 .rlarged2 <- function(pars, yv) {
     .Call(`_evgmrf_rlarged2`, pars, yv)
-}
-
-.cholAb <- function(A, b) {
-    .Call(`_evgmrf_chol_logdet_solve`, A, b)
-}
-
-.chol_idiag <- function(A) {
-    .Call(`_evgmrf_chol_idiag`, A)
-}
-
-.chol_idiag_omp <- function(A, threads = 0L) {
-    .Call(`_evgmrf_chol_idiag_omp`, A, threads)
-}
-
-.ldchol <- function(A) {
-    .Call(`_evgmrf_chol_logdet`, A)
-}
-
-.cholsolveAB <- function(A, B) {
-    .Call(`_evgmrf_chol_solve_mat`, A, B)
 }
 

@@ -31,7 +31,7 @@
 #'   optimization process. Defaults to \code{1e-6}.
 #' @param reml_alpha0 A scalar setting the initial line search multiplier for the REML 
 #'   optimization process. Defaults to \code{1}.    
-#' @param reml_rho0 A scalar setting the multiplicative rate at thish the line search 
+#' @param reml_rho0 A scalar setting the multiplicative rate at which the line search 
 #'   multiplier is reduced for the REML optimization process. Defaults to \code{0.5}.    
 #' @param line_search_mult A multiplier for the step when line searches take
 #'   place. Defaults to \code{1}.
@@ -40,8 +40,8 @@
 #'   to \code{Eigen::SimplicialLLT}). If explicitly set to \code{"Cholesky"}, 
 #'   \code{super} is automatically forced to \code{TRUE} and \code{Matrix::Cholesky}
 #'   is used with \code{super = TRUE}. Only recommended with \code{Matrix(>=1.8-0)}.
-#' @param alpha.tol A numeric convergence tolerance threshold for the model's 
-#'   spatial \code{alpha} parameters. Defaults to \code{1e-6}.
+#' @param phi.tol A numeric convergence tolerance threshold for the model's 
+#'   spatial \code{phi} parameters. Defaults to \code{1e-5}.
 #' @param grad_mult A numeric penalty coefficient applied during outer REML optimization. 
 #'   If any unpenalised inner optimization gradient coordinate exceeds an absolute 
 #'   threshold of 1, this value is added directly as a discrete penalty to the objective 
@@ -61,17 +61,6 @@
 #' @param perturb.mult A scaling multiplier used to exponentially step up the diagonal 
 #'   \code{perturb.tol} ridge penalty during iterative Cholesky factorization failures. 
 #'   Defaults to \code{5}.
-#' @param perturb.method A character string defining the algebraic framework used to apply 
-#'   perturbations; defaults to \code{"chol"}. If set to \code{"Cholesky"}, \code{super} 
-#'   is forced to \code{TRUE}.
-#' @param perturb.tol.eigen A numeric baseline tolerance threshold checking the smallest 
-#'   eigenvalue during dedicated Eigen-based matrix perturbation loops. Defaults to \code{1e-3}.
-#' @param perturb.mult.eigen A scaling multiplier used to exponentially step up the 
-#'   eigenvalue stabilization penalty threshold upon iterative Cholesky failure. 
-#'   Defaults to \code{10}.
-#' @param super Logical; activates CHOLMOD supernodal sparse matrix factorization settings. 
-#'   Automatically forced to \code{TRUE} if \code{inner_optim} or \code{perturb.method} 
-#'   equal \code{"Cholesky"}. Defaults to \code{FALSE}.
 #' @param refine.inits Logical; if \code{TRUE}, initial values for parameters are refined 
 #'   using a diagonal quasi-Newton method. Defaults to \code{FALSE}.
 #' 
@@ -99,11 +88,10 @@ evgmrf.control <- function(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-
                            reml_rho0 = .1,
                            line_search_mult = 1,
                            inner_optim = 'chol',
-                           alpha.tol = 1e-6, grad_mult = 0, par_mult = .1, 
+                           phi.tol = 1e-5, grad_mult = 0, par_mult = .1, 
                            update = FALSE, openmp = FALSE, threads = 0, 
-                           perturb.tol = 1e-2, perturb.mult = 5, perturb.method = 'chol', 
-                           perturb.tol.eigen = 1e-3, perturb.mult.eigen = 10,
-                           super = FALSE, refine.inits = FALSE) {
+                           perturb.tol = 1e-2, perturb.mult = 5,
+                           refine.inits = FALSE) {
   
   # 1. Gather all explicit configurations into a named list
   out <- list(
@@ -113,17 +101,11 @@ evgmrf.control <- function(eps = 5e-3, it0 = 20, step_size = 0.2, reml_eps = 5e-
     reml_gradtol = reml_gradtol, reml_fntol = reml_fntol, reml_dgradtol = reml_dgradtol,
     reml_alpha0 = reml_alpha0, reml_rho0 = reml_rho0,
     line_search_mult = line_search_mult, inner_optim = inner_optim,
-    alpha.tol = alpha.tol, grad_mult = grad_mult, par_mult = par_mult, 
+    phi.tol = phi.tol, grad_mult = grad_mult, par_mult = par_mult, 
     update = update, openmp = openmp, threads = threads, 
-    perturb.tol = perturb.tol, perturb.mult = perturb.mult, perturb.method = perturb.method, 
-    perturb.tol.eigen = perturb.tol.eigen, perturb.mult.eigen = perturb.mult.eigen,
-    super = super, refine.inits = refine.inits
+    perturb.tol = perturb.tol, perturb.mult = perturb.mult, 
+    refine.inits = refine.inits
   )
-  
-  # 2. Apply conditional overrides based on assigned options
-  if (out$inner_optim == 'Cholesky' || out$perturb.method == 'Cholesky') {
-    out$super <- TRUE
-  }
   
   out
 }

@@ -112,41 +112,45 @@
   out
 }
 
-.perturb <- function(A, b = NULL, tol = 1e-1, mult = 1e2) {
-  d0 <- Matrix::diag(A)
-  test <- suppressWarnings(try(.cholAb(A, b), silent = TRUE))
-  while(inherits(test, "try-error")) {
-    Matrix::diag(A) <- d0 + tol
-    test <- suppressWarnings(try(.cholAb(A, b), silent = TRUE))
-    tol <- mult * tol
-    if (!is.finite(tol))
-      stop("Can't perturb Hessian to be positive definite.")
+.perturb <- function(A, b = NULL, chol_factor = NULL, tol = 1e-1, mult = 1e2, super = FALSE) {
+  if (!super) {
+    out <- .perturb_simplicial(A, b, chol_factor, tol, mult)
+  } else {
+    out <- .perturb_supernodal(A, b, chol_factor, tol, mult)
   }
-  attr(A, 'chol') <- test
-  A
+  out
 }
 
-.perturb_super <- function(A, b = NULL, tol = 1e-1, mult = 1e2, super = TRUE) {
-  A0 <- A
+.perturb_simplicial <- function(A, b = NULL, chol_factor, tol = 1e-1, mult = 1e2) {
+  ldet <- .chol_factorize_simplicial(chol_factor, A)
+  if (!is.na(ldet))
+    return(list(A = A, ldet = ldet))
   d0 <- Matrix::diag(A)
-  test <- suppressWarnings(try(Matrix::Cholesky(A, LDL = FALSE, super = super), silent = TRUE))
-  while(inherits(test, "try-error")) {
+  while(is.na(ldet)) {
     Matrix::diag(A) <- d0 + tol
-    test <- suppressWarnings(try(Matrix::Cholesky(A, LDL = FALSE, super = super), silent = TRUE))
+    ldet <- .chol_factorize_simplicial(chol_factor, A)
+    if (!is.na(ldet))
+      return(list(A = A, ldet = ldet))
     tol <- mult * tol
-    if (!is.finite(tol))
-      stop("Can't perturb Hessian to be positive definite.")
+    if (tol > 1e20)
+      stop("Couldn't perturb Hessian to be positive definite.")
   }
-  attr(A, 'chol') <- test#.chol_logdet_solve(A, b)
-  A
 }
 
-.Cholesky0 <- function(rho, Qd, ridge = 1) {
-  Q <- .mQ(rho, Qd)
-  Q <- as(Q, 'symmetricMatrix')
-  n <- nrow(Q)
-  Q <- Q + Matrix::Diagonal(n, rep(ridge, n))
-  Matrix::Cholesky(Q, LDL = FALSE, super = TRUE)
+.perturb_supernodal <- function(A, b = NULL, chol_factor, tol = 1e-1, mult = 1e2) {
+  ldet <- .chol_factorize_supernodal(chol_factor, A)
+  if (!is.na(ldet))
+    return(list(A = A, ldet = ldet))
+  d0 <- Matrix::diag(A)
+  while(is.na(ldet)) {
+    Matrix::diag(A) <- d0 + tol
+    ldet <- .chol_factorize_supernodal(chol_factor, A)
+    if (!is.na(ldet))
+      return(list(A = A, ldet = ldet))
+    tol <- mult * tol
+    if (tol > 1e20)
+      stop("Couldn't perturb Hessian to be positive definite.")
+  }
 }
 
 .search_Q0 <- function(pars, likdata, likfns, Q, hyper) {
@@ -168,6 +172,27 @@
   stp
 }
 
+.chol_solve <- function(chol_factor, b, supernodal) {
+  b <- as.matrix(b)
+  if (supernodal) .chol_solve_dense_supernodal(chol_factor, b)
+  else            .chol_solve_dense_simplicial(chol_factor, b)
+}
+
+.chol_quadform <- function(chol_factor, Bb, supernodal) {
+  if (supernodal) {
+    out <- .chol_quadform_supernodal(chol_factor, Bb)
+  } else {
+    out <- .chol_quadform_simplicial(chol_factor, Bb)
+  }
+  out
+}
+
+.chol_solve_Lt <- function(chol_factor, z, supernodal) {
+  z <- as.matrix(z)
+  if (supernodal) .chol_solve_Lt_supernodal(chol_factor, z)
+  else            .chol_solve_Lt_simplicial(chol_factor, z)
+}
+
 .search_Q <- function(pars, likdata, likfns, Q, hyper, kept = NULL, diag = FALSE) {
   gH <- .d12_Q(pars, likdata, likfns, Q, hyper)
   H <- gH$H
@@ -176,18 +201,11 @@
     D <- Matrix::Diagonal(nrow(H), 1 / sqrt(d))
     H <- D %*% H %*% D
     b <- as.vector(D %*% gH$g)
-    if (likdata$control$inner_optim == 'Cholesky') {
-      H <- .perturb_super(H, likdata$chol0, likdata$control$perturb.tol, likdata$control$perturb.mult, likdata$control$super)
-      cholH <- attr(H, 'chol')
-      stp <- D %*% Matrix::solve(cholH, b)
-      ldet <- as.vector(Matrix::determinant(cholH, sqrt = FALSE)$modulus)
-    } else {
-      H <- .perturb(H, b, likdata$control$perturb.tol, likdata$control$perturb.mult)
-      cholH <- attr(H, 'chol')
-      stp <- D %*% cholH$z
-      ldet <- cholH$logdet_A
-    }
-    ldet <- ldet  - 2 * sum(log(Matrix::diag(D)))
+    pert <- .perturb(H, b, likdata$chol_factor, likdata$control$perturb.tol, 
+                     likdata$control$perturb.mult, likdata$control$super)
+    H <- pert$A
+    stp <- D %*% .chol_solve(likdata$chol_factor, b, likdata$control$super)#cholH$z
+    ldet <- pert$ldet  - 2 * sum(log(Matrix::diag(D)))
   } else {
     stp <- gH$g / d
     ldet <- sum(log(Matrix::diag(H)))
@@ -201,7 +219,7 @@
   attr(stp, 'precondHessian') <- H
   attr(stp, 'diagHessian') <- D
   if (!diag) {
-    attr(stp, 'cholprecondHessian') <- cholH
+    # attr(stp, 'cholprecondHessian') <- cholH
     iD <- Matrix::Diagonal(nrow(H), sqrt(d))
     H <- iD %*% H %*% iD
     attr(stp, 'idiagHessian') <- iD

@@ -22,6 +22,8 @@
 #' @param decompose Logical; if `TRUE`, structural additive terms within Besag-York-Mollié 
 #'   (BYM) models are returned broken down into their individual spatial and non-spatial 
 #'   components. Defaults to `FALSE`.
+#' @param supernodal Logical; activates CHOLMOD supernodal sparse matrix factorization settings. 
+#'   Defaults to `FALSE`.
 #' @param ... Unused arguments. Passed along for generic compatibility with 
 #'   \code{\link[stats]{simulate}}.
 #' 
@@ -49,7 +51,8 @@
 #' 
 #' @export
 simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob = NULL,
-                            simplify2array = TRUE, decompose = FALSE, ...) {
+                            simplify2array = TRUE, decompose = FALSE, supernodal = FALSE,
+                            ...) {
   if(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
     runif(1) # initialize the RNG if necessary
   if(is.null(seed)) {
@@ -65,29 +68,39 @@ simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob =
     type <- 'quantile'
   if (type == 'quantile')
     type0 <- 'response'
-  dH <- object$diagHessian
-  cpH <- object$cholprecondHessian
-  nH <- nrow(cpH)
+  if (decompose && type != 'link')
+    stop("Decomposed simulations only available for type = 'link'.")
+  dH <- Matrix::diag(object$diagHessian)
+  nH <- length(dH)
   z <- matrix(rnorm(nsim * nH), ncol = nsim)
-  mat <- .solve_pchol(cpH, z)
-  mat <- object$beta + Matrix::diag(dH) * mat
+  if (!supernodal) {
+    chol_factor <- .chol_analyze_simplicial(object$precondHessian)
+    placeholder <- .chol_factorize_simplicial(chol_factor, object$precondHessian)
+  } else {
+    chol_factor <- .chol_analyze_supernodal(object$precondHessian)
+    placeholder <- .chol_factorize_supernodal(chol_factor, object$precondHessian)
+  }
+  # draws with covariance H^{-1} = D A^{-1} D: half solve, not a full solve
+  mat <- object$beta + dH * .chol_solve_Lt(chol_factor, z, supernodal)
+  # one list element per component: per parameter, or per term if decompose
   lst <- list()
   for (i in 1:object$np) {
-    lst[[i]] <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
-    if (decompose &  object$model[i] %in% paste('bym', 2:4, sep = '')) {
+    bi <- mat[attr(object$beta, 'split') == i, , drop = FALSE]
+    if (decompose) {
       Xlc <- object$likdata$Xlc[[i]]
       Xlc <- Xlc[sapply(Xlc, ncol) > 0]
-      ind <- 1:length(Xlc)
-      spl <- rep(ind, sapply(Xlc, ncol))
-      pl <- lapply(ind, function(j) lst[[i]][spl == j, , drop = FALSE])
-      lst[[i]] <- lapply(ind, function(j) Xlc[[j]] %*% pl[[j]])
+      spl <- rep(seq_along(Xlc), sapply(Xlc, ncol))
+      lst[[i]] <- lapply(seq_along(Xlc), function(j)
+        as.matrix(Xlc[[j]] %*% bi[spl == j, , drop = FALSE]))
     } else {
-      lst[[i]] <- object$X[[i]] %*% lst[[i]]
+      lst[[i]] <- list(as.matrix(object$X[[i]] %*% bi))
     }
   }
+  lst <- unlist(lst, recursive = FALSE)
+  nms <- as.list(object$names[[type0]])
   if (decompose) {
-    lst <- unlist(lst, recursive = FALSE)
-    return(lst)
+    for (i in seq_along(nms))
+      nms[[i]] <- paste(nms[[i]], object$par_type[[i]], sep = ': ')
   }
   if (type %in% c('response', 'quantile')) {
     for (i in 1:object$np) {
@@ -95,10 +108,10 @@ simulate.evgmrf <- function(object, nsim = 1, seed = NULL, type = 'link', prob =
     }
   }
   if (simplify2array) {
-    for (i in 1:object$np)
+    for (i in seq_along(lst))
       lst[[i]] <- drop(array(lst[[i]], c(object$nx, object$ny, nsim)))
   }
-  names(lst) <- unlist(object$names[type0])
+  names(lst) <- unlist(nms)
   if (type == 'quantile') {
     nprob <- length(prob)
     if (nprob == 1) {

@@ -14,7 +14,7 @@
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -41,7 +41,15 @@ summary.evgmrf <- function(object, ...) {
     temp_mat <- matrix(0, nrow = length(object$beta), ncol = length(unlist(object$fixed_id)))
     temp_ind <- cbind(unlist(object$fixed_id), 1:ncol(temp_mat))
     temp_mat[temp_ind] <- 1
-    beta_fixed_ese <- sqrt(as.matrix(Matrix::solve(object$cholprecondHessian, temp_mat))[temp_ind])
+    if (!object$supernodal) {
+      chol_factor <- .chol_analyze_simplicial(object$precondHessian)
+      placeholder <- .chol_factorize_simplicial(chol_factor, object$precondHessian)
+    } else {
+      chol_factor <- .chol_analyze_supernodal(object$precondHessian)
+      placeholder <- .chol_factorize_supernodal(chol_factor, object$precondHessian)
+    }
+    beta_fixed_ese <- sqrt(as.matrix(.chol_solve(chol_factor, temp_mat, object$supernodal))[temp_ind])
+    # beta_fixed_ese <- sqrt(as.matrix(Matrix::solve(object$cholprecondHessian, temp_mat))[temp_ind])
     beta_fixed_ese <- beta_fixed_ese * Matrix::diag(object$diagHessian)[unlist(object$fixed_id)]
     for (i in seq_along(object$fixed_id)) {
       if (length(object$fixed[[i]]) > 0) 
@@ -125,7 +133,7 @@ print.summary.evgmrf <- function(x, ...) {
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -148,7 +156,7 @@ print.evgmrf <- function(x, ...) {
 #'
 #' @examples
 #' 
-#' \donttest{
+#' \dontrun{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -170,7 +178,7 @@ logLik.evgmrf <- function(object, ...) {
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -191,7 +199,7 @@ fitted.evgmrf <- function(object, ...) {
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')

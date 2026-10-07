@@ -26,6 +26,7 @@
   drop.parametric = TRUE,
   openmp = object$control$openmp,
   threads = object$control$threads,
+  supernodal = FALSE,
   ...
 )
 }
@@ -91,6 +92,9 @@ multi-core CPU parallelism extensions. Defaults to \code{object$control$openmp}.
 
 \item{threads}{An integer controlling maximum system CPU threads allocated
 if \code{openmp = TRUE}. Defaults to \code{object$control$threads}.}
+
+\item{supernodal}{Logical; activates CHOLMOD supernodal sparse matrix factorization settings.
+Defaults to \code{FALSE}.}
 
 \item{...}{Unused auxiliary flags passed along for generic matching alignment with
 \code{\link[stats]{predict}}.}

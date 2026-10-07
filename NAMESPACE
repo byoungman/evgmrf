@@ -17,6 +17,7 @@ import(grDevices)
 import(graphics)
 import(stats)
 import(utils)
+importFrom(Matrix,sparseMatrix)
 importFrom(Rcpp,sourceCpp)
 importFrom(methods,
   as,

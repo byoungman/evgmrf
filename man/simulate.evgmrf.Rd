@@ -12,6 +12,7 @@
   prob = NULL,
   simplify2array = TRUE,
   decompose = FALSE,
+  supernodal = FALSE,
   ...
 )
 }
@@ -41,6 +42,9 @@ coerced and dropped into spatial arrays dimensioned to match the grid layout
 \item{decompose}{Logical; if \code{TRUE}, structural additive terms within Besag-York-Mollié
 (BYM) models are returned broken down into their individual spatial and non-spatial
 components. Defaults to \code{FALSE}.}
+
+\item{supernodal}{Logical; activates CHOLMOD supernodal sparse matrix factorization settings.
+Defaults to \code{FALSE}.}
 
 \item{...}{Unused arguments. Passed along for generic compatibility with
 \code{\link[stats]{simulate}}.}

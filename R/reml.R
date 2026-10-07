@@ -9,7 +9,7 @@
 .reml0_try <- function(pars, likdata, likfns, Qd, alpha, makeQ, eps, direction, kept = NULL) {
   beta <- attr(pars, 'beta')
   hyper <- .pars2hyper(pars, Qd$hyper, Qd$hyper_swap)
-  Q <- makeQ(hyper, Qd, likdata$control$alpha.tol)
+  Q <- makeQ(hyper, Qd, likdata$control$phi.tol)
   if (attr(pars, 'first')) 
     likdata$control$inner$itlim <- 1e3
   fit <- .newton_step_inner(beta, .d0_Q, .search_Q, likdata = likdata, likfns = likfns, 

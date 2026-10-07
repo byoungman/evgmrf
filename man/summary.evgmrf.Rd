@@ -30,7 +30,7 @@ GMRFs, where relevant.
 }
 \examples{
 
-\donttest{
+\dontrun{
 data(COorder)
 COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')

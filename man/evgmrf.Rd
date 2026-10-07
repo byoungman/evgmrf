@@ -27,12 +27,13 @@ evgmrf(
   bymfns = NULL,
   hyper = list(kappa = -1),
   hyper_start,
-  hyper.jitter = missing(hyper_start)
+  hyper.jitter = missing(hyper_start),
+  supernodal = FALSE
 )
 }
 \arguments{
 \item{z}{An array or matrix containing the response data. If \code{W} is supplied,
-a matrix is expected. If an $r$-largest family is chosen, an array must be provided.}
+a matrix is expected. If an \eqn{r}-largest family is chosen, an array must be provided.}
 
 \item{family}{A character string specifying the extreme value error distribution.
 See \code{\link{family.evgmrf}} for details on supported families and required
@@ -62,7 +63,7 @@ based on point-wise optima; \code{"same"} uses the same values.}
 \item{lambda0}{A scalar or vector of initial smoothing parameter values. Defaults
 to \code{1}. Larger values give smoother starting points.}
 
-\item{args}{A \code{list} or arguments required to calculations. See
+\item{args}{A \code{list} of additional arguments required by some families. See
 \code{\link{family.evgmrf}}.}
 
 \item{control}{A \code{list} of control parameters. See \code{\link{evgmrf.control}}.}
@@ -73,9 +74,11 @@ Larger values provide more comprehensive iterations. Defaults to \code{0} (silen
 \item{outer}{A character string specifying the smoothing parameter optimizer.
 One of \code{"newton"}, \code{"nelder-mead"}, or \code{"bfgs"} (Default).}
 
-\item{gamma}{EDF multiplier. To do.}
+\item{gamma}{A scalar multiplier applied directly to the log-likelihood function
+representing localized constant weights; defaults to \code{1}.}
 
-\item{nx, ny}{Integers giving numbers of rows and columns in grid; see Details.}
+\item{nx, ny}{Positive integers giving the numbers of grid points in the
+first (\code{nx}) and second (\code{ny}) dimensions of the spatial grid. See Details.}
 
 \item{index}{A two-column \code{matrix} of integers identifying row and column
 positions; see Details.}
@@ -99,6 +102,9 @@ scales. See Details.}
 \item{hyper.jitter}{Logical; if \code{TRUE}, start hyperparameter values
 are jittered slightly to identify improvement. Defaults to \code{TRUE} unless
 \code{hyper_start} is used.}
+
+\item{supernodal}{Logical; activates CHOLMOD supernodal sparse matrix factorization
+settings. Defaults to \code{FALSE}.}
 }
 \value{
 An object of class \code{evgmrf} containing localized parameter arrays
@@ -171,14 +177,14 @@ data(COorder)
 COmxprcp <- COorder$prcp[1:20, 1, 1:16, 1:14]
 m_gev <- evgmrf(COmxprcp, family = "gev")
 
-\donttest{
+\dontrun{
 # Fix the precision parameter kappa at 5 for every parameter
 m_fixed <- evgmrf(COmxprcp, family = "gev", hyper = list(kappa = 5))
 
 # Estimate kappa and rho for a BYM2 model, starting rho at 0.5
 m_bym2 <- evgmrf(COmxprcp, family = "gev", model = "bym2",
                  hyper_start = list(rho = 0.5))
-}                
+}
 
 }
 \references{

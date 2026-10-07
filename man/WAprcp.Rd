@@ -44,7 +44,7 @@ raw (not bias-corrected) precipitation output was used.
 library(evgmrf)
 data(WAprcp)
 
-\donttest{
+\dontrun{
 # Fit the model to the full array of top-50 values
 m_wa1 <- evgmrf(WAprcp$prcp, family = "poisgpd",
                 args = list(r = 50, nper = 56))
