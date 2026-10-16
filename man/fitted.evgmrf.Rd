@@ -19,7 +19,7 @@ Extract Model Fitted Values
 }
 \examples{
 
-\dontrun{
+\donttest{
 data(COorder)
 COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp, family = 'gev')

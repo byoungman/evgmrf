@@ -65,8 +65,10 @@ through design matrices and inverse-link functions according to the target
 extreme value family definitions.
 }
 \examples{
-\dontrun{
-# Assuming a fitted model object 'm_gev' exists:
+\donttest{
+data(COorder)
+COmxprcp <- COorder$prcp[, 1, , ]
+m_gev <- evgmrf(COmxprcp)
 sim_paths <- simulate(m_gev, nsim = 100, type = "response")
 }
 

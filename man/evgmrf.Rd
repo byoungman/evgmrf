@@ -177,7 +177,7 @@ data(COorder)
 COmxprcp <- COorder$prcp[1:20, 1, 1:16, 1:14]
 m_gev <- evgmrf(COmxprcp, family = "gev")
 
-\dontrun{
+\donttest{
 # Fix the precision parameter kappa at 5 for every parameter
 m_fixed <- evgmrf(COmxprcp, family = "gev", hyper = list(kappa = 5))
 

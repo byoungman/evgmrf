@@ -44,8 +44,10 @@
 #'   to the choice of \code{simplify2array} and \code{decompose}.
 #' 
 #' @examples
-#' \dontrun{
-#' # Assuming a fitted model object 'm_gev' exists:
+#' \donttest{
+#' data(COorder)
+#' COmxprcp <- COorder$prcp[, 1, , ]
+#' m_gev <- evgmrf(COmxprcp)
 #' sim_paths <- simulate(m_gev, nsim = 100, type = "response")
 #' }
 #' 

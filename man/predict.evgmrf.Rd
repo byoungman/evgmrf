@@ -123,7 +123,7 @@ the function calls analytical gradients attached as a functional derivative attr
 See \code{evgmrf} for more details on \code{nx}, \code{ny} and \code{index}.
 }
 \examples{
-\dontrun{
+\donttest{
 data(COorder)
 COmxprcp <- COorder$prcp[, 1, , ]
 m_gev <- evgmrf(COmxprcp)

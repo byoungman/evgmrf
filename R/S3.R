@@ -14,7 +14,7 @@
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -133,7 +133,7 @@ print.summary.evgmrf <- function(x, ...) {
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -156,7 +156,7 @@ print.evgmrf <- function(x, ...) {
 #'
 #' @examples
 #' 
-#' \dontrun{
+#' \donttest{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -178,7 +178,7 @@ logLik.evgmrf <- function(object, ...) {
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')
@@ -199,7 +199,7 @@ fitted.evgmrf <- function(object, ...) {
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #' m_gev <- evgmrf(COmxprcp, family = 'gev')

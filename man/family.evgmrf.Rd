@@ -81,7 +81,7 @@ is the fitted model, as \code{args$u} to \code{"poisgpd"}.
 }
 \examples{
 
-\dontrun{
+\donttest{
 data(COorder)
 
 # GEV distribution for annual maxima

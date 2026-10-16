@@ -94,7 +94,7 @@
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #' data(COorder)
 #' COmxprcp <- COorder$prcp[, 1, , ]
 #'
